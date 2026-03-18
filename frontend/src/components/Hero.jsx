@@ -4,7 +4,6 @@ const Hero = () => {
       category: 'Technology',
       title: 'Revolutionary AI Breakthrough Promises to Transform Healthcare Industry',
       excerpt: 'Scientists develop new machine learning algorithm capable of detecting diseases years before symptoms appear.',
-      author: 'Sarah Johnson',
       date: 'March 18, 2026',
       image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop'
     },
@@ -12,7 +11,6 @@ const Hero = () => {
       category: 'Business',
       title: 'Global Markets Rally as Economic Indicators Show Strong Growth',
       excerpt: 'Markets around the world surge as new economic data reveals unexpected strength.',
-      author: 'Michael Chen',
       date: 'March 17, 2026',
       image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&h=400&fit=crop'
     },
@@ -20,7 +18,6 @@ const Hero = () => {
       category: 'Science',
       title: 'NASA Announces Major Discovery on Mars Surface',
       excerpt: 'Space agency reveals groundbreaking findings from latest Mars mission.',
-      author: 'James Wilson',
       date: 'March 16, 2026',
       image: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=600&h=400&fit=crop'
     },
@@ -28,7 +25,6 @@ const Hero = () => {
       category: 'Politics',
       title: 'World Leaders Gather for Historic Climate Summit',
       excerpt: 'International leaders convene to address pressing environmental challenges.',
-      author: 'Emma Davis',
       date: 'March 15, 2026',
       image: 'https://images.unsplash.com/photo-1569163139599-0f4517e36f51?w=600&h=400&fit=crop'
     }
@@ -36,7 +32,7 @@ const Hero = () => {
 
   return (
     <section className="bg-gray-50 py-6 px-6 border-b border-gray-200">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4">
         {featuredNews.map((news, index) => (
           <article key={index} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
             <div className="relative aspect-[3/2] overflow-hidden">
@@ -44,12 +40,10 @@ const Hero = () => {
               <span className="absolute top-3 left-3 bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide">{news.category}</span>
             </div>
             <div className="p-3">
-              <h2 className="text-sm font-bold leading-tight mb-2 tracking-tight line-clamp-2">
+              <h2 className="text-xs sm:text-sm font-bold leading-tight mb-2 tracking-tight line-clamp-2">
                 <a href="/article" className="text-gray-900 no-underline hover:text-red-600 transition-colors duration-200">{news.title}</a>
               </h2>
               <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                <span className="text-gray-600 font-medium">{news.author}</span>
-                <span className="text-gray-300">•</span>
                 <span>{news.date}</span>
               </div>
             </div>
