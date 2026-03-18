@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News Admin Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background: #f5f5f5; }
+    
+    .sidebar {
+      width: 250px;
+      background: #2c3e50;
+      min-height: 100vh;
+      position: fixed;
+      padding: 20px 0;
+    }
+    .sidebar h2 { color: white; text-align: center; padding: 20px; border-bottom: 1px solid #34495e; }
+    .sidebar ul { list-style: none; }
+    .sidebar li { padding: 15px 25px; cursor: pointer; color: #ecf0f1; transition: 0.3s; }
+    .sidebar li:hover, .sidebar li.active { background: #34495e; }
+    .sidebar a { color: #ecf0f1; text-decoration: none; display: block; }
+    
+    .main { margin-left: 250px; padding: 30px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .header h1 { color: #2c3e50; }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+    .btn-primary { background: #3498db; color: white; }
+    .btn-danger { background: #e74c3c; color: white; }
+    .btn-success { background: #27ae60; color: white; }
+    .btn-warning { background: #f39c12; color: white; }
+    
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .card h3 { margin-bottom: 15px; color: #2c3e50; }
+    
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background: #34495e; color: white; }
+    tr:hover { background: #f5f5f5; }
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; color: #2c3e50; font-weight: bold; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;
+    }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); justify-content: center; align-items: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content { background: white; padding: 30px; border-radius: 8px; width: 500px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h3 { color: #2c3e50; }
+    .close { font-size: 24px; cursor: pointer; color: #7f8c8d; }
+    
+    .badge { padding: 5px 10px; border-radius: 3px; font-size: 12px; }
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-danger { background: #f8d7da; color: #721c24; }
+    
+    .page { display: none; }
+    .page.active { display: block; }
+    
+    .search-box { padding: 10px; width: 300px; border: 1px solid #ddd; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>News Admin</h2>
+    <ul>
+      <li class="active" onclick="showPage('news')"><a href="#">Manage News</a></li>
+      <li onclick="showPage('categories')"><a href="#">Manage Categories</a></li>
+    </ul>
+  </div>
+
+  <div class="main">
+    <div class="header">
+      <h1 id="pageTitle">Manage News</h1>
+    </div>
+
+    <!-- News Page -->
+    <div id="newsPage" class="page active">
+      <div class="card">
+        <button class="btn btn-primary" onclick="openNewsModal()">+ Add News</button>
+        <input type="text" class="search-box" placeholder="Search news..." onkeyup="searchNews(this.value)" style="float:right;">
+      </div>
+      <div class="card">
+        <table id="newsTable">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Author</th>
+              <th>Featured</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="newsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Categories Page -->
+    <div id="categoriesPage" class="page">
+      <div class="card">
+        <button class="btn btn-primary" onclick="openCategoryModal()">+ Add Category</button>
+      </div>
+      <div class="card">
+        <table id="categoryTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Slug</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="categoryTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- News Modal -->
+  <div id="newsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="newsModalTitle">Add News</h3>
+        <span class="close" onclick="closeNewsModal()">&times;</span>
+      </div>
+      <form id="newsForm" onsubmit="saveNews(event)">
+        <input type="hidden" id="newsId">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="newsTitle" required>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="newsCategory" required></select>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="newsDescription" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Content</label>
+          <textarea id="newsContent" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Image URL</label>
+          <input type="text" id="newsImage">
+        </div>
+        <div class="form-group">
+          <label>Author</label>
+          <input type="text" id="newsAuthor">
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="newsFeatured"> Featured</label>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="newsPublished" checked> Published</label>
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+        <button type="button" class="btn btn-danger" onclick="closeNewsModal()">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Category Modal -->
+  <div id="categoryModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="categoryModalTitle">Add Category</h3>
+        <span class="close" onclick="closeCategoryModal()">&times;</span>
+      </div>
+      <form id="categoryForm" onsubmit="saveCategory(event)">
+        <input type="hidden" id="categoryId">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="categoryName" required>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="categoryDescription"></textarea>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="categoryActive" checked> Active</label>
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+        <button type="button" class="btn btn-danger" onclick="closeCategoryModal()">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:5000/api';
+    let categories = [];
+
+    function showPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.sidebar li').forEach(l => l.classList.remove('active'));
+      
+      if (page === 'news') {
+        document.getElementById('newsPage').classList.add('active');
+        document.querySelector('.sidebar li:nth-child(1)').classList.add('active');
+        document.getElementById('pageTitle').textContent = 'Manage News';
+        loadNews();
+      } else {
+        document.getElementById('categoriesPage').classList.add('active');
+        document.querySelector('.sidebar li:nth-child(2)').classList.add('active');
+        document.getElementById('pageTitle').textContent = 'Manage Categories';
+        loadCategories();
+      }
+    }
+
+    // Categories
+    async function loadCategories() {
+      const res = await fetch(`${API_URL}/categories`);
+      categories = await res.json();
+      renderCategories();
+    }
+
+    function renderCategories() {
+      const tbody = document.getElementById('categoryTableBody');
+      tbody.innerHTML = categories.map(cat => `
+        <tr>
+          <td>${cat.name}</td>
+          <td>${cat.slug}</td>
+          <td>${cat.description || '-'}</td>
+          <td><span class="badge ${cat.isActive ? 'badge-success' : 'badge-danger'}">${cat.isActive ? 'Active' : 'Inactive'}</span></td>
+          <td>
+            <button class="btn btn-warning" onclick="editCategory('${cat._id}')">Edit</button>
+            <button class="btn btn-danger" onclick="deleteCategory('${cat._id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openCategoryModal() {
+      document.getElementById('categoryForm').reset();
+      document.getElementById('categoryId').value = '';
+      document.getElementById('categoryModalTitle').textContent = 'Add Category';
+      document.getElementById('categoryModal').classList.add('active');
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('categoryModal').classList.remove('active');
+    }
+
+    async function saveCategory(e) {
+      e.preventDefault();
+      const id = document.getElementById('categoryId').value;
+      const data = {
+        name: document.getElementById('categoryName').value,
+        description: document.getElementById('categoryDescription').value,
+        isActive: document.getElementById('categoryActive').checked
+      };
+
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `${API_URL}/categories/${id}` : `${API_URL}/categories`;
+
+      await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      closeCategoryModal();
+      loadCategories();
+    }
+
+    function editCategory(id) {
+      const cat = categories.find(c => c._id === id);
+      document.getElementById('categoryId').value = cat._id;
+      document.getElementById('categoryName').value = cat.name;
+      document.getElementById('categoryDescription').value = cat.description || '';
+      document.getElementById('categoryActive').checked = cat.isActive;
+      document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+      document.getElementById('categoryModal').classList.add('active');
+    }
+
+    async function deleteCategory(id) {
+      if (confirm('Are you sure you want to delete this category?')) {
+        await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE' });
+        loadCategories();
+      }
+    }
+
+    // News
+    async function loadNews() {
+      await loadCategoriesForSelect();
+      const res = await fetch(`${API_URL}/news`);
+      const news = await res.json();
+      renderNews(news);
+    }
+
+    async function loadCategoriesForSelect() {
+      const res = await fetch(`${API_URL}/categories`);
+      categories = await res.json();
+      const select = document.getElementById('newsCategory');
+      select.innerHTML = categories.map(cat => `<option value="${cat._id}">${cat.name}</option>`).join('');
+    }
+
+    function renderNews(newsList) {
+      const tbody = document.getElementById('newsTableBody');
+      tbody.innerHTML = newsList.map(news => `
+        <tr>
+          <td>${news.title}</td>
+          <td>${news.category ? news.category.name : '-'}</td>
+          <td>${news.author}</td>
+          <td><span class="badge ${news.isFeatured ? 'badge-success' : 'badge-danger'}">${news.isFeatured ? 'Yes' : 'No'}</span></td>
+          <td><span class="badge ${news.isPublished ? 'badge-success' : 'badge-danger'}">${news.isPublished ? 'Published' : 'Draft'}</span></td>
+          <td>
+            <button class="btn btn-warning" onclick="editNews('${news._id}')">Edit</button>
+            <button class="btn btn-danger" onclick="deleteNews('${news._id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function searchNews(query) {
+      fetch(`${API_URL}/news`)
+        .then(res => res.json())
+        .then(news => {
+          const filtered = news.filter(n => n.title.toLowerCase().includes(query.toLowerCase()));
+          renderNews(filtered);
+        });
+    }
+
+    function openNewsModal() {
+      document.getElementById('newsForm').reset();
+      document.getElementById('newsId').value = '';
+      document.getElementById('newsModalTitle').textContent = 'Add News';
+      document.getElementById('newsModal').classList.add('active');
+    }
+
+    function closeNewsModal() {
+      document.getElementById('newsModal').classList.remove('active');
+    }
+
+    async function saveNews(e) {
+      e.preventDefault();
+      const id = document.getElementById('newsId').value;
+      const data = {
+        title: document.getElementById('newsTitle').value,
+        description: document.getElementById('newsDescription').value,
+        content: document.getElementById('newsContent').value,
+        category: document.getElementById('newsCategory').value,
+        image: document.getElementById('newsImage').value,
+        author: document.getElementById('newsAuthor').value || 'Admin',
+        isFeatured: document.getElementById('newsFeatured').checked,
+        isPublished: document.getElementById('newsPublished').checked
+      };
+
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `${API_URL}/news/${id}` : `${API_URL}/news`;
+
+      await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      closeNewsModal();
+      loadNews();
+    }
+
+    async function editNews(id) {
+      const res = await fetch(`${API_URL}/news/${id}`);
+      const news = await res.json();
+      
+      document.getElementById('newsId').value = news._id;
+      document.getElementById('newsTitle').value = news.title;
+      document.getElementById('newsDescription').value = news.description;
+      document.getElementById('newsContent').value = news.content;
+      document.getElementById('newsImage').value = news.image || '';
+      document.getElementById('newsAuthor').value = news.author;
+      document.getElementById('newsFeatured').checked = news.isFeatured;
+      document.getElementById('newsPublished').checked = news.isPublished;
+      
+      await loadCategoriesForSelect();
+      document.getElementById('newsCategory').value = news.category._id;
+      
+      document.getElementById('newsModalTitle').textContent = 'Edit News';
+      document.getElementById('newsModal').classList.add('active');
+    }
+
+    async function deleteNews(id) {
+      if (confirm('Are you sure you want to delete this news?')) {
+        await fetch(`${API_URL}/news/${id}`, { method: 'DELETE' });
+        loadNews();
+      }
+    }
+
+    loadNews();
+  </script>
+</body>
+</html>
