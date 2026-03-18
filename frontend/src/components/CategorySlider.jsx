@@ -1,4 +1,8 @@
+import { useState } from 'react';
+
 const CategorySlider = () => {
+  const [activeCategory, setActiveCategory] = useState('All');
+
   const categories = [
     { name: 'All', href: '/' },
     { name: 'Bollywood', href: '/bollywood' },
@@ -20,7 +24,15 @@ const CategorySlider = () => {
           <a
             key={category.name}
             href={category.href}
-            className="px-4 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full whitespace-nowrap no-underline transition-all duration-200 hover:bg-red-600 hover:text-white"
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveCategory(category.name);
+            }}
+            className={`px-4 py-1.5 text-xs font-medium rounded-full whitespace-nowrap no-underline transition-all duration-200 ${
+              activeCategory === category.name
+                ? 'bg-red-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-red-600 hover:text-white'
+            }`}
           >
             {category.name}
           </a>
