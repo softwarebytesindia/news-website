@@ -55,7 +55,6 @@ const Navbar = () => {
               <path d="m21 21-4.35-4.35"></path>
             </svg>
           </button>
-          <button className="px-5 py-2.5 bg-red-600 text-white border-none rounded-md font-semibold text-sm cursor-pointer transition-all duration-200 hover:bg-red-700 hover:-translate-y-0.5">Subscribe</button>
         </div>
       </div>
     </nav>
