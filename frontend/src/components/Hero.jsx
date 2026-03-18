@@ -37,7 +37,7 @@ const Hero = () => {
           <article key={index} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
             <div className="relative aspect-[3/2] overflow-hidden">
               <img src={news.image} alt={news.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
-              <span className="absolute top-3 left-3 bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide">{news.category}</span>
+              <span className="absolute top-3 left-3 bg-red-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[7px] sm:text-[10px] font-semibold uppercase tracking-wide">{news.category}</span>
             </div>
             <div className="p-3">
               <h2 className="text-xs sm:text-sm font-bold leading-tight mb-2 tracking-tight line-clamp-2">
