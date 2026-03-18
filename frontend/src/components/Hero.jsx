@@ -31,7 +31,7 @@ const Hero = () => {
   ];
 
   return (
-    <section className="bg-gray-50 py-6 px-6 border-b border-gray-200">
+    <section className="bg-gray-50 py-4 sm:py-6  sm:px-6 px-3 border-b border-gray-200">
       <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4">
         {featuredNews.map((news, index) => (
           <article key={index} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">

@@ -1,36 +1,10 @@
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
+import LatestNews from '../components/LatestNews';
 import Footer from '../components/Footer';
 
 const Home = () => {
   const newsSections = [
-    {
-      title: 'Latest News',
-      viewAll: '/latest',
-      articles: [
-        {
-          category: 'Technology',
-          title: 'Tech Giants Report Record Earnings Amid AI Boom',
-          excerpt: 'Major technology companies exceed quarterly expectations as artificial intelligence drives unprecedented growth.',
-          image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=250&fit=crop',
-          time: '2 hours ago'
-        },
-        {
-          category: 'Politics',
-          title: 'Global Leaders Gather for Historic Climate Summit',
-          excerpt: 'World leaders from 150 countries convene to address pressing environmental challenges and commit to carbon reduction.',
-          image: 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=400&h=250&fit=crop',
-          time: '4 hours ago'
-        },
-        {
-          category: 'Business',
-          title: 'Stock Markets Reach All-Time Highs on Economic Optimism',
-          excerpt: 'Global indices surge as new economic data suggests sustained growth trajectory.',
-          image: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=400&h=250&fit=crop',
-          time: '5 hours ago'
-        }
-      ]
-    },
     {
       title: 'Featured Stories',
       viewAll: '/featured',
@@ -77,47 +51,30 @@ const Home = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-10">
             <div className="xl:col-span-3 flex flex-col gap-8">
+              <LatestNews />
               {newsSections.map((section, index) => (
                 <section key={index}>
                   <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
                     <h2 className="text-lg sm:text-xl font-bold text-gray-900 m-0 tracking-tight">{section.title}</h2>
                     <a href={section.viewAll} className="text-red-600 no-underline text-xs sm:text-sm font-semibold hover:text-red-700 transition-colors duration-200">View All →</a>
                   </div>
-                  {index === 0 ? (
-                    <div className="flex flex-col gap-3">
-                      {section.articles.map((article, articleIndex) => (
-                        <article key={articleIndex} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 w-full">
-                          <div className="relative w-20 h-14 sm:w-24 sm:h-16 flex-shrink-0 overflow-hidden">
-                            <img src={article.image} alt={article.title} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex-1 py-2 pr-3 min-w-0">
-                            <h3 className="text-sm font-bold leading-tight mb-1">
-                              <a href="/article" className="text-gray-900 no-underline hover:text-red-600 transition-colors duration-200">{article.title}</a>
-                            </h3>
-                            <p className="text-xs text-gray-500 leading-snug line-clamp-2 m-0">{article.excerpt}</p>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {section.articles.map((article, articleIndex) => (
-                        <article key={articleIndex} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                          <div className="relative aspect-[16/10] overflow-hidden">
-                            <img src={article.image} alt={article.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
-                            <span className="absolute top-3 left-3 bg-red-600 text-white px-2.5 py-1 rounded text-[10px] font-semibold uppercase">{article.category}</span>
-                          </div>
-                          <div className="p-5">
-                            <h3 className="text-base font-bold leading-snug mb-2.5 m-0">
-                              <a href="/article" className="text-gray-900 no-underline hover:text-red-600 transition-colors duration-200">{article.title}</a>
-                            </h3>
-                            <p className="text-sm leading-relaxed text-gray-500 mb-3 line-clamp-2">{article.excerpt}</p>
-                            <span className="text-xs text-gray-400">{article.time}</span>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {section.articles.map((article, articleIndex) => (
+                      <article key={articleIndex} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                        <div className="relative aspect-[16/10] overflow-hidden">
+                          <img src={article.image} alt={article.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+                          <span className="absolute top-3 left-3 bg-red-600 text-white px-2.5 py-1 rounded text-[10px] font-semibold uppercase">{article.category}</span>
+                        </div>
+                        <div className="p-5">
+                          <h3 className="text-base font-bold leading-snug mb-2.5 m-0">
+                            <a href="/article" className="text-gray-900 no-underline hover:text-red-600 transition-colors duration-200">{article.title}</a>
+                          </h3>
+                          <p className="text-sm leading-relaxed text-gray-500 mb-3 line-clamp-2">{article.excerpt}</p>
+                          <span className="text-xs text-gray-400">{article.time}</span>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                 </section>
               ))}
             </div>
