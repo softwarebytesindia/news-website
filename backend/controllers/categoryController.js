@@ -1,4 +1,4 @@
-const NewsCategory = require('../model/news_category');
+const NewsCategory = require('../model/newsCategory');
 
 const createCategory = async (req, res) => {
   try {
