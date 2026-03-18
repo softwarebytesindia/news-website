@@ -47,7 +47,7 @@ const Home = () => {
       <Navbar />
       <Hero />
       
-      <main className="flex-1 bg-gray-100 sm:py-10 py-6 px-6">
+      <main className="flex-1 bg-gray-100 sm:py-10 py-6 px-3">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-10">
             <div className="xl:col-span-3 flex flex-col gap-8">
