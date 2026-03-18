@@ -1,5 +1,3 @@
-import './Footer.css';
-
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
@@ -34,23 +32,23 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="footer">
-      <div className="footer-container">
-        <div className="footer-top">
-          <div className="footer-brand">
-            <a href="/" className="footer-logo">
-              <span className="footer-icon">📰</span>
-              <span className="footer-text">DailyNews</span>
+    <footer className="bg-gray-900 text-gray-300 py-16 px-6 pb-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 pb-12 border-b border-gray-700">
+          <div className="max-w-80">
+            <a href="/" className="inline-flex items-center gap-2 text-white no-underline mb-4">
+              <span className="text-3xl">📰</span>
+              <span className="text-3xl font-extrabold tracking-tight">DailyNews</span>
             </a>
-            <p className="footer-description">
+            <p className="text-base leading-7 text-gray-400 mb-6">
               Your trusted source for breaking news, in-depth analysis, and comprehensive coverage of world events.
             </p>
-            <div className="footer-social">
+            <div className="flex gap-3">
               {socialLinks.map((social) => (
                 <a 
                   key={social.name}
                   href={social.href}
-                  className="social-link"
+                  className="w-10 h-10 flex items-center justify-center bg-gray-700 rounded-lg text-gray-300 no-underline transition-all duration-200 hover:bg-red-600 hover:text-white hover:-translate-y-0.5"
                   aria-label={social.name}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -90,60 +88,60 @@ const Footer = () => {
             </div>
           </div>
 
-          <div className="footer-links">
-            <div className="footer-column">
-              <h4 className="footer-heading">Categories</h4>
-              <ul className="footer-list">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:col-span-2">
+            <div className="min-w-0">
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-5">Categories</h4>
+              <ul className="list-none p-0 m-0 flex flex-col gap-3">
                 {categories.map((item) => (
                   <li key={item.name}>
-                    <a href={item.href} className="footer-link">{item.name}</a>
+                    <a href={item.href} className="text-gray-400 no-underline text-sm hover:text-white transition-colors duration-200">{item.name}</a>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="footer-column">
-              <h4 className="footer-heading">Company</h4>
-              <ul className="footer-list">
+            <div className="min-w-0">
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-5">Company</h4>
+              <ul className="list-none p-0 m-0 flex flex-col gap-3">
                 {company.map((item) => (
                   <li key={item.name}>
-                    <a href={item.href} className="footer-link">{item.name}</a>
+                    <a href={item.href} className="text-gray-400 no-underline text-sm hover:text-white transition-colors duration-200">{item.name}</a>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="footer-column">
-              <h4 className="footer-heading">Legal</h4>
-              <ul className="footer-list">
+            <div className="min-w-0">
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-5">Legal</h4>
+              <ul className="list-none p-0 m-0 flex flex-col gap-3">
                 {legal.map((item) => (
                   <li key={item.name}>
-                    <a href={item.href} className="footer-link">{item.name}</a>
+                    <a href={item.href} className="text-gray-400 no-underline text-sm hover:text-white transition-colors duration-200">{item.name}</a>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="footer-column">
-              <h4 className="footer-heading">Newsletter</h4>
-              <p className="newsletter-text">Subscribe to get the latest news delivered to your inbox.</p>
-              <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
+            <div className="min-w-0">
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-5">Newsletter</h4>
+              <p className="text-sm text-gray-400 mb-4">Subscribe to get the latest news delivered to your inbox.</p>
+              <form className="flex flex-col gap-2" onSubmit={(e) => e.preventDefault()}>
                 <input 
                   type="email" 
                   placeholder="Enter your email" 
-                  className="newsletter-input"
+                  className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm outline-none transition-colors duration-200 placeholder:text-gray-400 focus:border-red-600"
                 />
-                <button type="submit" className="newsletter-btn">Subscribe</button>
+                <button type="submit" className="px-5 py-3 bg-red-600 text-white border-none rounded-lg font-semibold text-sm cursor-pointer transition-colors duration-200 hover:bg-red-700">Subscribe</button>
               </form>
             </div>
           </div>
         </div>
 
-        <div className="footer-bottom">
-          <p className="footer-copyright">
+        <div className="flex flex-col sm:flex-row justify-between items-center pt-8 gap-2">
+          <p className="text-sm text-gray-400 m-0">
             © {currentYear} DailyNews. All rights reserved.
           </p>
-          <p className="footer-tagline">
+          <p className="text-sm text-gray-500 m-0 italic">
             Trusted News. Every Day.
           </p>
         </div>
