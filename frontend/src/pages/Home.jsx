@@ -1,4 +1,5 @@
 import Navbar from '../components/Navbar';
+import CategorySlider from '../components/CategorySlider';
 import Hero from '../components/Hero';
 import LatestNews from '../components/LatestNews';
 import Footer from '../components/Footer';
@@ -45,6 +46,7 @@ const Home = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <CategorySlider />
       <Hero />
       
       <main className="flex-1 bg-gray-100 sm:py-10 py-6 px-3">
