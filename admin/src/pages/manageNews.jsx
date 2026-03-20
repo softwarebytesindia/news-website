@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import NewsFormPopup from '../components/NewsFormPopup';
 
 const ManageNews = () => {
@@ -25,9 +26,11 @@ const ManageNews = () => {
     if (!confirm('Are you sure you want to delete this news?')) return;
     try {
       await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      toast.success('News deleted successfully');
       fetchNews();
     } catch (error) {
       console.error('Error deleting news:', error);
+      toast.error('Failed to delete news');
     }
   };
 
@@ -54,6 +57,7 @@ const ManageNews = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-3 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Image</th>
                 <th className="px-3 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Title</th>
                 <th className="px-3 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Category</th>
                 <th className="px-3 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -63,6 +67,17 @@ const ManageNews = () => {
             <tbody className="divide-y divide-gray-200">
               {news.map((item) => (
                 <tr key={item._id} className="hover:bg-gray-50">
+                  <td className="px-3 md:px-4 py-2">
+                    {item.image ? (
+                      <img
+                        src={`http://localhost:5000${item.image}`}
+                        alt={item.title}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-500">No Img</div>
+                    )}
+                  </td>
                   <td className="px-3 md:px-4 py-2">
                     <p className="text-xs md:text-sm font-medium text-gray-900 line-clamp-1">{item.title}</p>
                     <p className="text-[10px] md:text-xs text-gray-500 line-clamp-1">{item.description}</p>
@@ -89,7 +104,7 @@ const ManageNews = () => {
               ))}
               {news.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-3 md:px-4 py-6 text-center text-xs md:text-sm text-gray-500">
+                  <td colSpan={5} className="px-3 md:px-4 py-6 text-center text-xs md:text-sm text-gray-500">
                     No news found. Add your first news!
                   </td>
                 </tr>

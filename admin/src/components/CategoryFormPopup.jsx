@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import Popup from './Popup';
 
 const CategoryFormPopup = ({ isOpen, onClose, onSuccess }) => {
@@ -17,6 +18,7 @@ const CategoryFormPopup = ({ isOpen, onClose, onSuccess }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      toast.success('Category created successfully');
       setFormData({ name: '', description: '' });
       onSuccess();
       onClose();

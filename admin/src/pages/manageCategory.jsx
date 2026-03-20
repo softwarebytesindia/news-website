@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import CategoryFormPopup from '../components/CategoryFormPopup';
 
 const ManageCategory = () => {
@@ -25,9 +26,11 @@ const ManageCategory = () => {
     if (!confirm('Are you sure you want to delete this category?')) return;
     try {
       await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      toast.success('Category deleted successfully');
       fetchCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
+      toast.error('Failed to delete category');
     }
   };
 
@@ -39,9 +42,11 @@ const ManageCategory = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...category, isActive: !currentStatus }),
       });
+      toast.success(`Category ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
       fetchCategories();
     } catch (error) {
       console.error('Error updating category:', error);
+      toast.error('Failed to update category');
     }
   };
 
