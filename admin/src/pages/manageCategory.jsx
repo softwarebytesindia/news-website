@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
+import CategoryFormPopup from '../components/CategoryFormPopup';
 
 const ManageCategory = () => {
   const [categories, setCategories] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-  });
+  const [showPopup, setShowPopup] = useState(false);
 
   const API_URL = 'http://localhost:5000/api/categories';
 
@@ -21,22 +18,6 @@ const ManageCategory = () => {
       setCategories(data);
     } catch (error) {
       console.error('Error fetching categories:', error);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      setShowForm(false);
-      setFormData({ name: '', description: '' });
-      fetchCategories();
-    } catch (error) {
-      console.error('Error creating category:', error);
     }
   };
 
@@ -69,46 +50,18 @@ const ManageCategory = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-base md:text-lg font-bold text-gray-800">Manage Categories</h1>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => setShowPopup(true)}
           className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 transition-colors w-fit"
         >
-          {showForm ? 'Cancel' : '+ Add Category'}
+          + Add Category
         </button>
       </div>
 
-      {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-gray-200 space-y-3">
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Category Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., Sports, Technology, Business"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows={2}
-              placeholder="Optional description"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full px-4 py-2 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Submit
-          </button>
-        </form>
-      )}
+      <CategoryFormPopup 
+        isOpen={showPopup} 
+        onClose={() => setShowPopup(false)} 
+        onSuccess={fetchCategories}
+      />
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
