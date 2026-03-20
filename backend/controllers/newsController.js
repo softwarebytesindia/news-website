@@ -7,6 +7,7 @@ const POPULATE_OPTIONS = [
   { path: 'category' },
   { path: 'author', select: 'name avatar' }
 ];
+const VALID_STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived'];
 
 const slugify = (value = '') => value
   .toString()
@@ -30,19 +31,6 @@ const getUniqueNewsSlug = async (value, excludeId = null) => {
   return slug;
 };
 
-const toValidDate = (value, fieldName) => {
-  if (value === null || value === undefined || value === '') {
-    return null;
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    throw new Error(`Invalid ${fieldName}`);
-  }
-
-  return date;
-};
-
 const normalizeTags = (tags) => {
   const rawTags = Array.isArray(tags)
     ? tags
@@ -60,7 +48,7 @@ const normalizeTags = (tags) => {
 const resolveAuthor = async (authorValue, existingNews = null) => {
   const currentAuthor = existingNews?.author || null;
 
-  if (authorValue === null) {
+  if (authorValue === null || authorValue === '') {
     return null;
   }
 
@@ -95,20 +83,23 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
     throw new Error('Category not found');
   }
 
+  const imageFallback = typeof input.image === 'string' && input.image.trim()
+    ? input.image.trim()
+    : '';
   const featuredImageInput = input.featuredImage || {};
   const existingFeaturedImage = existingNews?.featuredImage || {};
   const featuredImageUrl = typeof featuredImageInput.url === 'string'
     ? featuredImageInput.url.trim()
-    : (typeof input.image === 'string' && input.image.trim()) || existingFeaturedImage.url || '';
+    : imageFallback || existingFeaturedImage.url || '';
 
   const excerpt = typeof input.excerpt === 'string' && input.excerpt.trim()
     ? input.excerpt.trim()
     : (description || existingNews?.excerpt || '');
 
   const rawStatus = typeof input.status === 'string' ? input.status : existingNews?.status;
-  let status = ['draft', 'review', 'scheduled', 'published', 'archived'].includes(rawStatus)
+  const status = VALID_STATUSES.includes(rawStatus)
     ? rawStatus
-    : 'draft';
+    : (existingNews?.status || 'draft');
 
   const author = await resolveAuthor(input.author, existingNews);
 

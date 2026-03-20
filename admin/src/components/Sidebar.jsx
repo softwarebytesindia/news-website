@@ -4,6 +4,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const navItems = [
     { path: '/manage-news', label: 'Manage News', icon: '📰' },
     { path: '/manage-category', label: 'Manage Category', icon: '📂' },
+    { path: '/manage-author', label: 'Manage Author', icon: 'A' },
   ];
 
   return (

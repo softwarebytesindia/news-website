@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import ManageNews from './pages/manageNews';
 import ManageCategory from './pages/manageCategory';
+import ManageAuthor from './pages/manageAuthor';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route index element={<Navigate to="/manage-news" replace />} />
           <Route path="manage-news" element={<ManageNews />} />
           <Route path="manage-category" element={<ManageCategory />} />
+          <Route path="manage-author" element={<ManageAuthor />} />
         </Route>
       </Routes>
     </BrowserRouter>

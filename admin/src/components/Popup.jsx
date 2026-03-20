@@ -1,4 +1,4 @@
-const Popup = ({ isOpen, onClose, title, children }) => {
+const Popup = ({ isOpen, onClose, title, children, panelClassName = 'max-w-md md:max-w-lg' }) => {
   if (!isOpen) return null;
 
   return (
@@ -7,7 +7,7 @@ const Popup = ({ isOpen, onClose, title, children }) => {
         className="absolute inset-0 bg-black/60"
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
+      <div className={`relative bg-white rounded-lg w-full max-h-[90vh] overflow-y-auto shadow-xl ${panelClassName}`}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
           <h3 className="text-sm md:text-base font-semibold text-gray-800">{title}</h3>
           <button
