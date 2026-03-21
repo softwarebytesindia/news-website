@@ -1,7 +1,7 @@
-import Home from './pages/Home';
+import NewsHome from './pages/NewsHome';
 
 function App() {
-  return <Home />;
+  return <NewsHome />;
 }
 
 export default App;

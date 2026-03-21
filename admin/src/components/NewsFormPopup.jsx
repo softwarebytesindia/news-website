@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Popup from './Popup';
+import RichTextEditor from './RichTextEditor';
 
 const API_BASE_URL = 'http://localhost:5000';
 const API_URL = `${API_BASE_URL}/api/news`;
@@ -12,7 +13,6 @@ const STATUS_OPTIONS = ['draft', 'review', 'scheduled', 'published', 'archived']
 const getInitialFormData = (newsItem = null) => ({
   title: newsItem?.title || '',
   slug: newsItem?.slug || '',
-  description: newsItem?.description || '',
   excerpt: newsItem?.excerpt || '',
   content: newsItem?.content || '',
   featuredImageUrl: newsItem?.featuredImage?.url || '',
@@ -139,7 +139,6 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
       const payload = {
         title: formData.title.trim(),
         slug: formData.slug.trim(),
-        description: formData.description.trim(),
         excerpt: formData.excerpt.trim(),
         content: formData.content.trim(),
         featuredImage: {
@@ -227,35 +226,22 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(event) => updateFormData('description', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows={3}
-              required
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Excerpt</label>
+            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Summary / Excerpt</label>
             <textarea
               value={formData.excerpt}
               onChange={(event) => updateFormData('excerpt', event.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows={2}
-              placeholder="Short summary for cards and previews"
+              rows={3}
+              placeholder="Short summary for cards, previews, and snippet fallback"
             />
           </div>
 
           <div className="md:col-span-2">
             <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Content</label>
-            <textarea
+            <RichTextEditor
               value={formData.content}
-              onChange={(event) => updateFormData('content', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows={8}
-              required
+              onChange={(value) => updateFormData('content', value)}
+              placeholder="Write your article content here..."
             />
           </div>
 

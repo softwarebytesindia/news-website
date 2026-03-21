@@ -150,17 +150,9 @@ const AuthorFormPopup = ({ isOpen, onClose, onSuccess, authorItem }) => {
             onChange={(event) => setImageFile(event.target.files?.[0] || null)}
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
-        </div>
-
-        <div>
-          <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Avatar URL</label>
-          <input
-            type="text"
-            value={formData.avatar}
-            onChange={(event) => updateField('avatar', event.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="/uploads/avatar.jpg or https://..."
-          />
+          <p className="mt-1 text-[11px] text-gray-500">
+            Upload an image file. The selected image will preview below.
+          </p>
         </div>
 
         {imagePreview && (

@@ -8,6 +8,7 @@ const POPULATE_OPTIONS = [
   { path: 'author', select: 'name avatar' }
 ];
 const VALID_STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived'];
+const BREAKING_NEWS_LIMIT = 4;
 
 const slugify = (value = '') => value
   .toString()
@@ -64,13 +65,28 @@ const resolveAuthor = async (authorValue, existingNews = null) => {
   return currentAuthor;
 };
 
+const syncBreakingNewsLimit = async () => {
+  const breakingNews = await News.find({ isBreaking: true })
+    .sort({ breakingAt: -1, createdAt: -1, _id: -1 })
+    .select('_id');
+
+  if (breakingNews.length <= BREAKING_NEWS_LIMIT) {
+    return;
+  }
+
+  const demotedIds = breakingNews.slice(BREAKING_NEWS_LIMIT).map((item) => item._id);
+  await News.updateMany(
+    { _id: { $in: demotedIds } },
+    { $set: { isBreaking: false, breakingAt: null } }
+  );
+};
+
 const buildNewsPayload = async (input = {}, existingNews = null) => {
   const title = typeof input.title === 'string' ? input.title.trim() : existingNews?.title;
-  const description = typeof input.description === 'string' ? input.description.trim() : existingNews?.description;
   const content = typeof input.content === 'string' ? input.content.trim() : existingNews?.content;
 
-  if (!title || !description || !content) {
-    throw new Error('Title, description, and content are required');
+  if (!title || !content) {
+    throw new Error('Title and content are required');
   }
 
   const category = input.category || existingNews?.category;
@@ -92,9 +108,14 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
     ? featuredImageInput.url.trim()
     : imageFallback || existingFeaturedImage.url || '';
 
+  const seoInput = input.seo || {};
+  const existingSeo = existingNews?.seo || {};
+  const requestedMetaDescription = typeof seoInput.metaDescription === 'string'
+    ? seoInput.metaDescription.trim()
+    : '';
   const excerpt = typeof input.excerpt === 'string' && input.excerpt.trim()
     ? input.excerpt.trim()
-    : (description || existingNews?.excerpt || '');
+    : (existingNews?.excerpt || requestedMetaDescription || '');
 
   const rawStatus = typeof input.status === 'string' ? input.status : existingNews?.status;
   const status = VALID_STATUSES.includes(rawStatus)
@@ -102,15 +123,15 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
     : (existingNews?.status || 'draft');
 
   const author = await resolveAuthor(input.author, existingNews);
-
-  const seoInput = input.seo || {};
-  const existingSeo = existingNews?.seo || {};
   const priority = Number.isFinite(Number(input.priority)) ? Number(input.priority) : (existingNews?.priority ?? 0);
+  const isBreaking = typeof input.isBreaking === 'boolean' ? input.isBreaking : (existingNews?.isBreaking ?? false);
+  const breakingAt = isBreaking
+    ? (existingNews?.isBreaking ? (existingNews.breakingAt || new Date()) : new Date())
+    : null;
 
   return {
     title,
     slug: await getUniqueNewsSlug(input.slug || title, existingNews?._id),
-    description,
     excerpt,
     content,
     featuredImage: {
@@ -121,10 +142,11 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
     tags: input.tags !== undefined ? normalizeTags(input.tags) : (existingNews?.tags || []),
     author,
     status,
-    isBreaking: typeof input.isBreaking === 'boolean' ? input.isBreaking : (existingNews?.isBreaking ?? false),
+    isBreaking,
+    breakingAt,
     seo: {
       metaTitle: typeof seoInput.metaTitle === 'string' ? seoInput.metaTitle.trim() : (existingSeo.metaTitle || title),
-      metaDescription: typeof seoInput.metaDescription === 'string' ? seoInput.metaDescription.trim() : (existingSeo.metaDescription || excerpt),
+      metaDescription: requestedMetaDescription || existingSeo.metaDescription || excerpt,
       keywords: seoInput.keywords !== undefined ? normalizeTags(seoInput.keywords) : (existingSeo.keywords || [])
     },
     location: typeof input.location === 'string' ? input.location.trim() : (existingNews?.location || ''),
@@ -137,6 +159,9 @@ const createNews = async (req, res) => {
     const payload = await buildNewsPayload(req.body);
     const news = new News(payload);
     await news.save();
+    if (payload.isBreaking) {
+      await syncBreakingNewsLimit();
+    }
     await news.populate(POPULATE_OPTIONS);
     res.status(201).json(news);
   } catch (error) {
@@ -146,9 +171,34 @@ const createNews = async (req, res) => {
 
 const getAllNews = async (req, res) => {
   try {
-    const news = await News.find()
+    const filter = {};
+    if (typeof req.query.status === 'string' && VALID_STATUSES.includes(req.query.status)) {
+      filter.status = req.query.status;
+    }
+    if (req.query.isBreaking === 'true') {
+      filter.isBreaking = true;
+    }
+    if (req.query.isBreaking === 'false') {
+      filter.isBreaking = false;
+    }
+    if (req.query.excludeBreaking === 'true') {
+      filter.isBreaking = false;
+    }
+
+    const sort = req.query.sort === 'breaking'
+      ? { breakingAt: -1, createdAt: -1 }
+      : { priority: -1, createdAt: -1 };
+    const limit = Number.parseInt(req.query.limit, 10);
+
+    let query = News.find(filter)
       .populate(POPULATE_OPTIONS)
-      .sort({ priority: -1, createdAt: -1 });
+      .sort(sort);
+
+    if (Number.isInteger(limit) && limit > 0) {
+      query = query.limit(limit);
+    }
+
+    const news = await query;
     res.json(news);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -180,7 +230,42 @@ const updateNews = async (req, res) => {
       new: true,
       runValidators: true
     }).populate(POPULATE_OPTIONS);
+    if (payload.isBreaking) {
+      await syncBreakingNewsLimit();
+    }
 
+    res.json(news);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const toggleBreakingNews = async (req, res) => {
+  try {
+    if (typeof req.body.isBreaking !== 'boolean') {
+      return res.status(400).json({ error: 'isBreaking must be a boolean' });
+    }
+
+    const updates = {
+      isBreaking: req.body.isBreaking,
+      breakingAt: req.body.isBreaking ? new Date() : null
+    };
+
+    const existingNews = await News.findById(req.params.id);
+    if (!existingNews) {
+      return res.status(404).json({ error: 'News not found' });
+    }
+
+    await News.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true
+    });
+
+    if (req.body.isBreaking) {
+      await syncBreakingNewsLimit();
+    }
+
+    const news = await News.findById(req.params.id).populate(POPULATE_OPTIONS);
     res.json(news);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -200,4 +285,4 @@ const deleteNews = async (req, res) => {
   }
 };
 
-module.exports = { createNews, getAllNews, getNewsById, updateNews, deleteNews };
+module.exports = { createNews, getAllNews, getNewsById, updateNews, deleteNews, toggleBreakingNews };

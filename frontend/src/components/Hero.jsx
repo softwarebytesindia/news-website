@@ -1,57 +1,70 @@
-const Hero = () => {
-  const featuredNews = [
-    {
-      category: 'Technology',
-      title: 'Revolutionary AI Breakthrough Promises to Transform Healthcare Industry',
-      excerpt: 'Scientists develop new machine learning algorithm capable of detecting diseases years before symptoms appear.',
-      date: 'March 18, 2026',
-      image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop'
-    },
-    {
-      category: 'Business',
-      title: 'Global Markets Rally as Economic Indicators Show Strong Growth',
-      excerpt: 'Markets around the world surge as new economic data reveals unexpected strength.',
-      date: 'March 17, 2026',
-      image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&h=400&fit=crop'
-    },
-    {
-      category: 'Science',
-      title: 'NASA Announces Major Discovery on Mars Surface',
-      excerpt: 'Space agency reveals groundbreaking findings from latest Mars mission.',
-      date: 'March 16, 2026',
-      image: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=600&h=400&fit=crop'
-    },
-    {
-      category: 'Politics',
-      title: 'World Leaders Gather for Historic Climate Summit',
-      excerpt: 'International leaders convene to address pressing environmental challenges.',
-      date: 'March 15, 2026',
-      image: 'https://images.unsplash.com/photo-1569163139599-0f4517e36f51?w=600&h=400&fit=crop'
-    }
-  ];
+import { formatNewsDate, getNewsSummary, resolveMediaUrl } from '../utils/news';
 
-  return (
-    <section className="bg-gray-50 py-4 sm:py-6  sm:px-6 px-3 border-b border-gray-200">
-      <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {featuredNews.map((news, index) => (
-          <article key={index} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div className="relative aspect-[3/2] overflow-hidden">
-              <img src={news.image} alt={news.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
-              <span className="absolute top-3 left-3 bg-red-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[7px] sm:text-[10px] font-semibold uppercase tracking-wide">{news.category}</span>
-            </div>
-            <div className="p-3">
-              <h2 className="text-xs sm:text-sm font-bold leading-tight mb-2 tracking-tight line-clamp-2">
-                <a href="/article" className="text-gray-900 no-underline hover:text-red-600 transition-colors duration-200">{news.title}</a>
-              </h2>
-              <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                <span>{news.date}</span>
+const Hero = ({ articles, loading, error }) => (
+  <section className="bg-gray-50 py-4 sm:py-6 sm:px-6 px-3 border-b border-gray-200">
+    <div className="max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-red-600 mb-1">Top Hero</p>
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Breaking News</h2>
+        </div>
+        <span className="text-xs text-gray-500">Newest 4 breaking stories</span>
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, index) => (
+            <div key={index} className="bg-white rounded-xl overflow-hidden shadow-sm animate-pulse">
+              <div className="aspect-[3/2] bg-gray-200" />
+              <div className="p-3 space-y-2">
+                <div className="h-3 bg-gray-200 rounded w-16" />
+                <div className="h-4 bg-gray-200 rounded w-full" />
+                <div className="h-4 bg-gray-200 rounded w-5/6" />
               </div>
             </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-};
+          ))}
+        </div>
+      ) : error ? (
+        <div className="bg-white rounded-xl p-6 text-sm text-red-600 shadow-sm">{error}</div>
+      ) : articles.length === 0 ? (
+        <div className="bg-white rounded-xl p-6 text-sm text-gray-500 shadow-sm">
+          No breaking news is selected right now.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {articles.map((news) => (
+            <article key={news._id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="relative aspect-[3/2] overflow-hidden">
+                {news.featuredImage?.url ? (
+                  <img
+                    src={resolveMediaUrl(news.featuredImage.url)}
+                    alt={news.featuredImage.alt || news.title}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-red-50 via-white to-gray-100" />
+                )}
+                <span className="absolute top-3 left-3 bg-red-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[7px] sm:text-[10px] font-semibold uppercase tracking-wide">
+                  {news.category?.name || 'News'}
+                </span>
+              </div>
+              <div className="p-3">
+                <h3 className="text-xs sm:text-sm font-bold leading-tight mb-2 tracking-tight line-clamp-2 text-gray-900">
+                  {news.title}
+                </h3>
+                <p className="text-[11px] sm:text-xs text-gray-500 line-clamp-2 mb-2">
+                  {getNewsSummary(news)}
+                </p>
+                <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                  <span>{formatNewsDate(news.breakingAt || news.createdAt)}</span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+);
 
 export default Hero;

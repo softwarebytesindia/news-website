@@ -17,13 +17,6 @@ const newsSchema = new mongoose.Schema(
       lowercase: true,
       index: true
     },
-    description: {
-      type: String,
-      required: true,
-      trim: true,
-      minlength: 20,
-      maxlength: 400
-    },
     excerpt: {
       type: String,
       trim: true,
@@ -66,6 +59,11 @@ const newsSchema = new mongoose.Schema(
     isBreaking: {
       type: Boolean,
       default: false,
+      index: true
+    },
+    breakingAt: {
+      type: Date,
+      default: null,
       index: true
     },
     seo: {

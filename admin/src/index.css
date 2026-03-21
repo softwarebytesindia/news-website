@@ -1,1 +1,427 @@
 @import "tailwindcss";
+
+/* ════════════════════════════════════════════════════════════
+   WordPress-Style Rich Text Editor
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── Font Registrations for Quill ─── */
+.ql-font-arial { font-family: 'Arial', sans-serif; }
+.ql-font-georgia { font-family: 'Georgia', serif; }
+.ql-font-tahoma { font-family: 'Tahoma', sans-serif; }
+.ql-font-verdana { font-family: 'Verdana', sans-serif; }
+.ql-font-courier-new { font-family: 'Courier New', monospace; }
+.ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
+
+/* ─── Editor Wrapper ─── */
+.wp-editor-wrapper {
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  background: #fff;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.wp-editor-wrapper:focus-within {
+  border-color: #2271b1;
+  box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* ─── Fullscreen Mode ─── */
+.wp-editor-wrapper.wp-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  border-radius: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.wp-fullscreen .wp-toolbar {
+  flex-shrink: 0;
+}
+
+.wp-fullscreen .quill,
+.wp-fullscreen .ql-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.wp-fullscreen .ql-editor {
+  flex: 1;
+  max-height: none !important;
+}
+
+.wp-fullscreen .wp-source-editor {
+  flex: 1;
+  max-height: none !important;
+}
+
+.wp-fullscreen .wp-status-bar {
+  flex-shrink: 0;
+}
+
+/* ─── Toolbar ─── */
+.wp-toolbar {
+  background: linear-gradient(to bottom, #fcfcfc, #f0f0f1);
+  border-bottom: 1px solid #c3c4c7;
+}
+
+.wp-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 6px;
+}
+
+.wp-toolbar-row-2 {
+  border-top: 1px solid #dcdcde;
+  background: linear-gradient(to bottom, #f6f6f7, #ebebec);
+}
+
+/* ─── Toolbar Button ─── */
+.wp-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #50575e;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.1s ease;
+  flex-shrink: 0;
+}
+
+.wp-toolbar-btn:hover {
+  background: #f0f0f1;
+  border-color: #c3c4c7;
+  color: #1d2327;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+.wp-toolbar-btn.active {
+  background: #e0e0e0;
+  border-color: #999;
+  color: #1d2327;
+  box-shadow: inset 0 2px 5px -3px rgba(0, 0, 0, 0.3);
+}
+
+.wp-toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.wp-toolbar-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ─── Toolbar Select ─── */
+.wp-toolbar-select {
+  height: 32px;
+  padding: 0 24px 0 8px;
+  border: 1px solid #c3c4c7;
+  border-radius: 3px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2350575e' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 5.646a.5.5 0 0 1 .708 0L8 8.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") no-repeat right 6px center;
+  background-size: 12px;
+  font-size: 13px;
+  color: #50575e;
+  cursor: pointer;
+  appearance: none;
+  min-width: 110px;
+  transition: border-color 0.1s;
+  flex-shrink: 0;
+}
+
+.wp-toolbar-select:hover {
+  border-color: #8c8f94;
+  color: #1d2327;
+}
+
+.wp-toolbar-select:focus {
+  outline: none;
+  border-color: #2271b1;
+  box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* ─── Color Picker ─── */
+.wp-color-picker-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.wp-color-btn {
+  flex-direction: column;
+  gap: 1px;
+  height: 34px;
+  padding-bottom: 2px;
+}
+
+.wp-color-indicator {
+  display: block;
+  width: 16px;
+  height: 4px;
+  border-radius: 1px;
+  margin-top: -2px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.wp-color-input {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── Toolbar Divider ─── */
+.wp-toolbar-divider {
+  display: inline-block;
+  width: 1px;
+  height: 22px;
+  background: #c3c4c7;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ─── Quill Overrides ─── */
+.wp-editor-wrapper .quill {
+  border: none;
+}
+
+.wp-editor-wrapper .ql-toolbar.ql-snow {
+  display: none !important;
+}
+
+.wp-editor-wrapper .ql-container.ql-snow {
+  border: none;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.wp-editor-wrapper .ql-editor {
+  min-height: 300px;
+  max-height: 550px;
+  overflow-y: auto;
+  padding: 16px 20px;
+  color: #1d2327;
+}
+
+.wp-editor-wrapper .ql-editor.ql-blank::before {
+  color: #a7aaad;
+  font-style: italic;
+  font-size: 15px;
+}
+
+/* ─── Content Styles ─── */
+.wp-editor-wrapper .ql-editor h1 {
+  font-size: 2em;
+  font-weight: 700;
+  margin: 0.67em 0 0.5em;
+  color: #1d2327;
+  line-height: 1.3;
+}
+
+.wp-editor-wrapper .ql-editor h2 {
+  font-size: 1.65em;
+  font-weight: 700;
+  margin: 0.6em 0 0.45em;
+  color: #1d2327;
+  line-height: 1.35;
+}
+
+.wp-editor-wrapper .ql-editor h3 {
+  font-size: 1.35em;
+  font-weight: 600;
+  margin: 0.55em 0 0.4em;
+  color: #1d2327;
+  line-height: 1.4;
+}
+
+.wp-editor-wrapper .ql-editor h4 {
+  font-size: 1.15em;
+  font-weight: 600;
+  margin: 0.5em 0 0.35em;
+  color: #1d2327;
+}
+
+.wp-editor-wrapper .ql-editor h5 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 0.45em 0 0.3em;
+  color: #50575e;
+}
+
+.wp-editor-wrapper .ql-editor h6 {
+  font-size: 0.9em;
+  font-weight: 600;
+  margin: 0.4em 0 0.25em;
+  color: #50575e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wp-editor-wrapper .ql-editor p {
+  margin-bottom: 1em;
+}
+
+.wp-editor-wrapper .ql-editor blockquote {
+  border-left: 4px solid #2271b1;
+  background: #f0f6fc;
+  padding: 14px 18px;
+  margin: 1.2em 0;
+  border-radius: 0 4px 4px 0;
+  color: #3c434a;
+  font-style: italic;
+}
+
+.wp-editor-wrapper .ql-editor pre.ql-syntax {
+  background: #23282d;
+  color: #e4e6e8;
+  border-radius: 4px;
+  padding: 16px 18px;
+  font-family: 'Consolas', 'Monaco', 'Andale Mono', monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.wp-editor-wrapper .ql-editor a {
+  color: #2271b1;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.wp-editor-wrapper .ql-editor a:hover {
+  color: #135e96;
+}
+
+.wp-editor-wrapper .ql-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 1em 0;
+}
+
+.wp-editor-wrapper .ql-editor ul,
+.wp-editor-wrapper .ql-editor ol {
+  padding-left: 1.8em;
+  margin-bottom: 1em;
+}
+
+.wp-editor-wrapper .ql-editor li {
+  margin-bottom: 0.3em;
+}
+
+.wp-editor-wrapper .ql-editor hr {
+  border: none;
+  border-top: 1px solid #dcdcde;
+  margin: 1.5em 0;
+}
+
+/* ─── Source Code Editor ─── */
+.wp-source-editor {
+  width: 100%;
+  min-height: 300px;
+  max-height: 550px;
+  padding: 16px 20px;
+  border: none;
+  outline: none;
+  resize: vertical;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #1d2327;
+  background: #fffdf6;
+  tab-size: 2;
+}
+
+/* ─── Status Bar ─── */
+.wp-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 12px;
+  background: #f0f0f1;
+  border-top: 1px solid #dcdcde;
+  font-size: 12px;
+  color: #646970;
+  min-height: 28px;
+}
+
+.wp-word-count strong {
+  color: #3c434a;
+  font-weight: 600;
+}
+
+.wp-status-path {
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  color: #8c8f94;
+}
+
+/* ─── Scrollbar ─── */
+.wp-editor-wrapper .ql-editor::-webkit-scrollbar,
+.wp-source-editor::-webkit-scrollbar {
+  width: 8px;
+}
+
+.wp-editor-wrapper .ql-editor::-webkit-scrollbar-track,
+.wp-source-editor::-webkit-scrollbar-track {
+  background: #f6f7f7;
+}
+
+.wp-editor-wrapper .ql-editor::-webkit-scrollbar-thumb,
+.wp-source-editor::-webkit-scrollbar-thumb {
+  background: #c3c4c7;
+  border-radius: 4px;
+}
+
+.wp-editor-wrapper .ql-editor::-webkit-scrollbar-thumb:hover,
+.wp-source-editor::-webkit-scrollbar-thumb:hover {
+  background: #8c8f94;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .wp-toolbar-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .wp-toolbar-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .wp-toolbar-select {
+    min-width: 90px;
+    height: 28px;
+    font-size: 12px;
+    padding: 0 20px 0 6px;
+  }
+
+  .wp-toolbar-divider {
+    height: 18px;
+    margin: 0 2px;
+  }
+
+  .wp-editor-wrapper .ql-editor {
+    padding: 12px 14px;
+    min-height: 200px;
+    font-size: 14px;
+  }
+}
