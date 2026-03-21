@@ -50,3 +50,12 @@
 .breadcrumb-scroll::-webkit-scrollbar {
   display: none;
 }
+
+.category-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.category-scroll::-webkit-scrollbar {
+  display: none;
+}

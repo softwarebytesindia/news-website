@@ -18,7 +18,7 @@ const CategorySlider = () => {
   ];
 
   return (
-    <div className="md:hidden bg-white border-b border-gray-200 overflow-x-auto scrollbar-hide">
+    <div className="category-scroll md:hidden bg-white border-b border-gray-200 overflow-x-auto">
       <div className="flex items-center gap-2 px-4 py-3 min-w-max">
         {categories.map((category) => (
           <a
