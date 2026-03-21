@@ -59,3 +59,12 @@
 .category-scroll::-webkit-scrollbar {
   display: none;
 }
+
+.nav-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.nav-scroll::-webkit-scrollbar {
+  display: none;
+}
