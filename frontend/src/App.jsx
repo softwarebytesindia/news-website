@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import About from './pages/About';
 import CategoryNewsPage from './pages/CategoryNewsPage';
 import CategoryOrArticlePage from './pages/CategoryOrArticlePage';
 import NewsHome from './pages/NewsHome';
@@ -21,6 +22,10 @@ function App() {
   }, []);
 
   const pathSegments = pathname.split('/').filter(Boolean).map((segment) => decodeURIComponent(segment));
+  if (pathname === '/about') {
+    return <About />;
+  }
+
   if (pathSegments.length === 1) {
     const [categorySlug] = pathSegments;
     return <CategoryNewsPage categorySlug={categorySlug} />;
