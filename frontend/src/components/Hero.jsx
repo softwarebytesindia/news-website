@@ -1,4 +1,4 @@
-import { formatNewsDate, getNewsPath, getNewsSummary, resolveMediaUrl } from '../utils/news';
+import { formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
 
 const Hero = ({ articles, loading, error }) => (
   <section className="bg-gray-50 py-4 sm:py-6 sm:px-6 px-3 border-b border-gray-200">
@@ -31,7 +31,15 @@ const Hero = ({ articles, loading, error }) => (
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {articles.map((news) => (
-            <a key={news._id} href={getNewsPath(news)} className="block no-underline bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <a
+              key={news._id}
+              href={getNewsPath(news)}
+              onClick={(event) => {
+                event.preventDefault();
+                navigateTo(getNewsPath(news));
+              }}
+              className="block no-underline bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            >
               <div className="relative aspect-[3/2] overflow-hidden">
                 {news.featuredImage?.url ? (
                   <img

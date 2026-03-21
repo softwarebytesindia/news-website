@@ -297,6 +297,60 @@ const getNewsByPath = async (req, res) => {
   }
 };
 
+const getNewsByCategoryListing = async (req, res) => {
+  try {
+    const { categorySlug, subCategorySlug } = req.params;
+
+    const category = await NewsCategory.findOne({ slug: categorySlug, isActive: true });
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    let subCategory = null;
+    if (subCategorySlug) {
+      subCategory = await SubCategory.findOne({
+        slug: subCategorySlug,
+        category: category._id,
+        isActive: true
+      });
+
+      if (!subCategory) {
+        return res.status(404).json({ error: 'Subcategory not found' });
+      }
+    }
+
+    const filter = {
+      status: 'published',
+      category: category._id
+    };
+
+    if (subCategory) {
+      filter.subCategory = subCategory._id;
+    }
+
+    const news = await News.find(filter)
+      .populate(POPULATE_OPTIONS)
+      .sort({ priority: -1, createdAt: -1 });
+
+    const latestNews = await News.find({
+      status: 'published',
+      _id: { $nin: news.map((item) => item._id) }
+    })
+      .populate(POPULATE_OPTIONS)
+      .sort({ priority: -1, createdAt: -1 })
+      .limit(8);
+
+    res.json({
+      category,
+      subCategory,
+      news,
+      latestNews
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const updateNews = async (req, res) => {
   try {
     const existingNews = await News.findById(req.params.id);
@@ -364,4 +418,4 @@ const deleteNews = async (req, res) => {
   }
 };
 
-module.exports = { createNews, getAllNews, getNewsById, getNewsBySlug, getNewsByPath, updateNews, deleteNews, toggleBreakingNews };
+module.exports = { createNews, getAllNews, getNewsById, getNewsBySlug, getNewsByPath, getNewsByCategoryListing, updateNews, deleteNews, toggleBreakingNews };

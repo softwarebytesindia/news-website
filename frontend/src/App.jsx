@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import CategoryNewsPage from './pages/CategoryNewsPage';
+import CategoryOrArticlePage from './pages/CategoryOrArticlePage';
 import NewsHome from './pages/NewsHome';
 import NewsDetailPage from './pages/NewsDetailPage';
 
@@ -19,9 +21,14 @@ function App() {
   }, []);
 
   const pathSegments = pathname.split('/').filter(Boolean).map((segment) => decodeURIComponent(segment));
+  if (pathSegments.length === 1) {
+    const [categorySlug] = pathSegments;
+    return <CategoryNewsPage categorySlug={categorySlug} />;
+  }
+
   if (pathSegments.length === 2) {
-    const [categorySlug, slug] = pathSegments;
-    return <NewsDetailPage categorySlug={categorySlug} slug={slug} />;
+    const [categorySlug, slugOrSubCategory] = pathSegments;
+    return <CategoryOrArticlePage categorySlug={categorySlug} slugOrSubCategory={slugOrSubCategory} />;
   }
 
   if (pathSegments.length === 3) {

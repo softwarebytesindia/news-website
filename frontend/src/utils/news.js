@@ -54,3 +54,12 @@ export const getNewsPath = (article) => {
     ? `/${categorySlug}/${subCategorySlug}/${articleSlug}`
     : `/${categorySlug}/${articleSlug}`;
 };
+
+export const navigateTo = (path) => {
+  if (!path || window.location.pathname === path) {
+    return;
+  }
+
+  window.history.pushState({}, '', path);
+  window.dispatchEvent(new Event('popstate'));
+};

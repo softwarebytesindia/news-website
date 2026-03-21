@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import Breadcrumb from '../components/Breadcrumb';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, resolveMediaUrl } from '../utils/news';
+import { NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
 
 const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
   const [article, setArticle] = useState(null);
@@ -67,6 +68,17 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
     };
   }, [article]);
 
+  const breadcrumbItems = article ? [
+    { label: 'Home', path: '/' },
+    article.category?.slug
+      ? { label: article.category.name, path: `/${article.category.slug}` }
+      : null,
+    article.subCategory?.slug && article.category?.slug
+      ? { label: article.subCategory.name, path: `/${article.category.slug}/${article.subCategory.slug}` }
+      : null,
+    { label: article.title }
+  ].filter(Boolean) : [];
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <Navbar />
@@ -86,7 +98,16 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
             </div>
           ) : error ? (
             <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
-              <a href="/" className="text-sm text-red-600 no-underline hover:text-red-700">Back to home</a>
+              <a
+                href="/"
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigateTo('/');
+                }}
+                className="text-sm text-red-600 no-underline hover:text-red-700"
+              >
+                Back to home
+              </a>
               <p className="mt-4 text-red-600">{error}</p>
             </div>
           ) : article ? (
@@ -103,7 +124,7 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                 ) : null}
 
                 <div className="p-5 sm:p-8">
-                  <a href="/" className="text-sm text-red-600 no-underline hover:text-red-700">Back to home</a>
+                  <Breadcrumb items={breadcrumbItems} />
                   <div className="mt-4 flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-500">
                     <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 px-3 py-1 font-semibold">
                       {article.category?.name || 'News'}
@@ -111,12 +132,9 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                     <span>{formatNewsDate(article.createdAt)}</span>
                     {article.author?.name ? <span>By {article.author.name}</span> : null}
                   </div>
-                  <h1 className="mt-4 text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 leading-tight">
+                  <h1 className="mt-4 text-xl sm:text-3xl font-bold tracking-tight text-gray-900 leading-tight">
                     {article.title}
                   </h1>
-                  <p className="mt-4 text-sm sm:text-base text-gray-600 leading-7">
-                    {getNewsSummary(article)}
-                  </p>
                 </div>
 
                 <div className="px-5 sm:px-8 pb-8">
@@ -140,6 +158,10 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                       <a
                         key={item._id}
                         href={getNewsPath(item)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          navigateTo(getNewsPath(item));
+                        }}
                         className="group no-underline flex items-start gap-3 border-b border-gray-100 pb-4 last:border-b-0 last:pb-0"
                       >
                         <div className="w-24 h-18 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
