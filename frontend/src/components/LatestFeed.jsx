@@ -27,7 +27,7 @@ const LatestFeed = ({ articles, loading, error }) => (
     ) : (
       <div className="flex flex-col gap-3">
         {articles.map((article) => (
-          <article key={article._id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 w-full">
+          <a key={article._id} href={`/news/${article.slug}`} className="no-underline bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 w-full">
             <div className="relative w-20 h-14 sm:w-24 sm:h-16 flex-shrink-0 overflow-hidden bg-gray-100">
               {article.featuredImage?.url ? (
                 <img
@@ -47,7 +47,7 @@ const LatestFeed = ({ articles, loading, error }) => (
                 {getNewsSummary(article)}
               </p>
             </div>
-          </article>
+          </a>
         ))}
       </div>
     )}

@@ -218,6 +218,28 @@ const getNewsById = async (req, res) => {
   }
 };
 
+const getNewsBySlug = async (req, res) => {
+  try {
+    const news = await News.findOne({ slug: req.params.slug, status: 'published' }).populate(POPULATE_OPTIONS);
+    if (!news) {
+      return res.status(404).json({ error: 'News not found' });
+    }
+
+    const relatedNews = await News.find({
+      _id: { $ne: news._id },
+      status: 'published',
+      category: news.category?._id || news.category
+    })
+      .populate(POPULATE_OPTIONS)
+      .sort({ priority: -1, createdAt: -1 })
+      .limit(4);
+
+    res.json({ news, relatedNews });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const updateNews = async (req, res) => {
   try {
     const existingNews = await News.findById(req.params.id);
@@ -285,4 +307,4 @@ const deleteNews = async (req, res) => {
   }
 };
 
-module.exports = { createNews, getAllNews, getNewsById, updateNews, deleteNews, toggleBreakingNews };
+module.exports = { createNews, getAllNews, getNewsById, getNewsBySlug, updateNews, deleteNews, toggleBreakingNews };
