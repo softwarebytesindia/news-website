@@ -12,12 +12,7 @@ const Footer = () => {
 
   const company = [
     { name: 'About Us', href: '/about' },
-    { name: 'Careers', href: '/careers' },
     { name: 'Contact', href: '/contact' },
-    { name: 'Advertise', href: '/advertise' },
-  ];
-
-  const legal = [
     { name: 'Privacy Policy', href: '/privacy' },
     { name: 'Terms & Conditions', href: '/terms' },
     { name: 'Disclaimer', href: '/disclaimer' },
@@ -32,15 +27,15 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-gray-900 text-gray-300 py-10 px-6 pb-6">
+    <footer className="bg-gray-900 text-gray-300 py-5 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 pb-10 border-b border-gray-700">
-          <div className="max-w-80">
-            <a href="/" className="inline-flex items-center gap-2 text-white no-underline mb-3">
-              <img src="/src/assets/new_bharat_digital_logo-1.png" alt="New Bharat Digital" className="h-8 w-auto" />
+        <div className="grid grid-cols-1 gap-6 pb-5 border-b border-gray-700">
+          <div>
+            <a href="/" className="inline-flex items-center gap-2 text-white no-underline mb-2">
+              <img src="/news.webp" alt="New Bharat Digital" className="h-6 w-auto" />
             </a>
-            <p className="text-sm leading-6 text-gray-400 mb-4">
-              Your trusted source for breaking news, in-depth analysis, and comprehensive coverage of world events.
+            <p className="text-xs leading-5 text-gray-400 mb-3">
+              Your trusted source for breaking news.
             </p>
             <div className="flex gap-2">
               {socialLinks.map((social) => (
@@ -87,24 +82,12 @@ const Footer = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-2">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Newsletter</h4>
-            <p className="text-xs text-gray-400 mb-3">Subscribe to get the latest news delivered to your inbox.</p>
-            <form className="flex flex-col gap-2" onSubmit={(e) => e.preventDefault()}>
-              <input 
-                type="email" 
-                placeholder="Enter your email" 
-                className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs outline-none transition-colors duration-200 placeholder:text-gray-400 focus:border-red-600"
-              />
-              <button type="submit" className="px-4 py-2 bg-red-600 text-white border-none rounded-lg font-semibold text-xs cursor-pointer transition-colors duration-200 hover:bg-red-700">Subscribe</button>
-            </form>
-          </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 pt-8 pb-8">
+        <div className="grid grid-cols-3 gap-3 pt-4 pb-4">
           <div className="min-w-0">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Categories</h4>
-            <ul className="list-none p-0 m-0 flex flex-col gap-2">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2">Categories</h4>
+            <ul className="list-none p-0 m-0 flex flex-col gap-1">
               {categories.map((item) => (
                 <li key={item.name}>
                   <a href={item.href} className="text-gray-400 no-underline text-xs hover:text-white transition-colors duration-200">{item.name}</a>
@@ -114,20 +97,9 @@ const Footer = () => {
           </div>
 
           <div className="min-w-0">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Company</h4>
-            <ul className="list-none p-0 m-0 flex flex-col gap-2">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2">Company</h4>
+            <ul className="list-none p-0 m-0 flex flex-col gap-1">
               {company.map((item) => (
-                <li key={item.name}>
-                  <a href={item.href} className="text-gray-400 no-underline text-xs hover:text-white transition-colors duration-200">{item.name}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="min-w-0 col-span-2 lg:col-span-1">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Legal</h4>
-            <ul className="list-none p-0 m-0 flex flex-col gap-2">
-              {legal.map((item) => (
                 <li key={item.name}>
                   <a href={item.href} className="text-gray-400 no-underline text-xs hover:text-white transition-colors duration-200">{item.name}</a>
                 </li>
@@ -136,7 +108,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-center pt-5 gap-2 border-t border-gray-700">
+        <div className="flex flex-col sm:flex-row justify-between items-center pt-4 gap-2 border-t border-gray-700">
           <p className="text-xs text-gray-400 m-0">
             © {currentYear} New Bharat Digital. All rights reserved.
           </p>

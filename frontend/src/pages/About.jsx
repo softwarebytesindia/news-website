@@ -70,7 +70,7 @@ const About = () => {
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
             <div className="flex flex-col items-center text-center">
               <img 
-                src="/new_bharat_digital_logo-1.png" 
+                src="/news.webp" 
                 alt="New Bharat Digital" 
                 className="h-12 sm:h-14 w-auto mb-4"
               />

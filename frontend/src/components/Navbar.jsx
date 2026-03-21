@@ -49,7 +49,7 @@ const Navbar = () => {
             className="flex items-center gap-2 text-gray-900 no-underline"
             onClick={(event) => handleNavigate(event, '/')}
           >
-            <img src="/new_bharat_digital_logo-1.png" alt="New Bharat Digital" className="h-7 sm:h-8 w-auto" />
+            <img src="/news.webp" alt="New Bharat Digital" className="h-7 sm:h-8 w-auto" />
           </a>
         </div>
 
