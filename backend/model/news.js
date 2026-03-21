@@ -39,6 +39,12 @@ const newsSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+    subCategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SubCategory',
+      default: null,
+      index: true
+    },
     tags: [{
       type: String,
       trim: true,

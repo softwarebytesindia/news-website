@@ -1,11 +1,14 @@
 const NewsCategory = require('../model/newsCategory');
 
+const normalizeName = (value = '') => String(value).trim().toLowerCase();
+
 const createCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
-    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const normalizedName = normalizeName(name);
+    const slug = normalizedName.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     
-    const category = new NewsCategory({ name, slug, description });
+    const category = new NewsCategory({ name: normalizedName, slug, description });
     await category.save();
     res.status(201).json(category);
   } catch (error) {
@@ -35,11 +38,12 @@ const getCategoryById = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const { name, description, isActive } = req.body;
-    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const normalizedName = normalizeName(name);
+    const slug = normalizedName.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     
     const category = await NewsCategory.findByIdAndUpdate(
       req.params.id, 
-      { name, slug, description, isActive }, 
+      { name: normalizedName, slug, description, isActive }, 
       { new: true, runValidators: true }
     );
     if (!category) return res.status(404).json({ error: 'Category not found' });

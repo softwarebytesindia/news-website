@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 const News = require('../model/news');
 const NewsCategory = require('../model/newsCategory');
+const SubCategory = require('../model/subCategory');
 const Author = require('../model/author');
 
 const POPULATE_OPTIONS = [
   { path: 'category' },
+  { path: 'subCategory', select: 'name slug category isActive' },
   { path: 'author', select: 'name avatar' }
 ];
 const VALID_STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived'];
@@ -99,6 +101,28 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
     throw new Error('Category not found');
   }
 
+  let subCategory = null;
+  if (input.subCategory === '' || input.subCategory === null) {
+    subCategory = null;
+  } else if (input.subCategory || existingNews?.subCategory) {
+    const candidateSubCategory = input.subCategory || existingNews?.subCategory;
+
+    if (!mongoose.Types.ObjectId.isValid(candidateSubCategory)) {
+      throw new Error('Valid subcategory is required');
+    }
+
+    const subCategoryRecord = await SubCategory.findOne({
+      _id: candidateSubCategory,
+      category
+    });
+
+    if (!subCategoryRecord) {
+      throw new Error('Subcategory not found for the selected category');
+    }
+
+    subCategory = subCategoryRecord._id;
+  }
+
   const imageFallback = typeof input.image === 'string' && input.image.trim()
     ? input.image.trim()
     : '';
@@ -139,6 +163,7 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
       alt: typeof featuredImageInput.alt === 'string' ? featuredImageInput.alt.trim() : (existingFeaturedImage.alt || title)
     },
     category,
+    subCategory,
     tags: input.tags !== undefined ? normalizeTags(input.tags) : (existingNews?.tags || []),
     author,
     status,
@@ -240,6 +265,38 @@ const getNewsBySlug = async (req, res) => {
   }
 };
 
+const getNewsByPath = async (req, res) => {
+  try {
+    const { categorySlug, subCategorySlug, slug } = req.params;
+
+    const news = await News.findOne({ slug, status: 'published' }).populate(POPULATE_OPTIONS);
+    if (!news) {
+      return res.status(404).json({ error: 'News not found' });
+    }
+
+    if (news.category?.slug !== categorySlug) {
+      return res.status(404).json({ error: 'News not found' });
+    }
+
+    const articleSubCategorySlug = news.subCategory?.slug || null;
+    if ((subCategorySlug || null) !== articleSubCategorySlug) {
+      return res.status(404).json({ error: 'News not found' });
+    }
+
+    const latestNews = await News.find({
+      _id: { $ne: news._id },
+      status: 'published'
+    })
+      .populate(POPULATE_OPTIONS)
+      .sort({ priority: -1, createdAt: -1 })
+      .limit(8);
+
+    res.json({ news, latestNews });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const updateNews = async (req, res) => {
   try {
     const existingNews = await News.findById(req.params.id);
@@ -307,4 +364,4 @@ const deleteNews = async (req, res) => {
   }
 };
 
-module.exports = { createNews, getAllNews, getNewsById, getNewsBySlug, updateNews, deleteNews, toggleBreakingNews };
+module.exports = { createNews, getAllNews, getNewsById, getNewsBySlug, getNewsByPath, updateNews, deleteNews, toggleBreakingNews };

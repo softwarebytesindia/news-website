@@ -6,6 +6,7 @@ const path = require('path');
 
 const newsRoutes = require('./routes/newsRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const subCategoryRoutes = require('./routes/subCategoryRoutes');
 const authorRoutes = require('./routes/authorRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 
@@ -22,6 +23,7 @@ mongoose.connect('mongodb://localhost:27017/newsdb')
 
 app.use('/api/news', newsRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/subcategories', subCategoryRoutes);
 app.use('/api/authors', authorRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

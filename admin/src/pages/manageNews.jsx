@@ -227,7 +227,10 @@ const ManageNews = () => {
                     )}
                   </td>
                   <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-gray-600">
-                    {item.category?.name || 'N/A'}
+                    <div>{item.category?.name || 'N/A'}</div>
+                    {item.subCategory?.name ? (
+                      <div className="text-[10px] md:text-xs text-gray-500">{item.subCategory.name}</div>
+                    ) : null}
                   </td>
                   <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-gray-600">
                     {item.author?.name || 'N/A'}

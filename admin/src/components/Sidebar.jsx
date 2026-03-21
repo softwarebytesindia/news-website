@@ -1,21 +1,22 @@
-import { NavLink } from 'react-router-dom';
+﻿import { NavLink } from 'react-router-dom';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const navItems = [
-    { path: '/manage-news', label: 'Manage News', icon: '📰' },
-    { path: '/manage-category', label: 'Manage Category', icon: '📂' },
-    { path: '/manage-author', label: 'Manage Author', icon: 'A' },
+    { path: '/manage-news', label: 'Manage News', icon: 'N' },
+    { path: '/manage-category', label: 'Manage Category', icon: 'C' },
+    { path: '/manage-subcategory', label: 'Manage Subcategory', icon: 'S' },
+    { path: '/manage-author', label: 'Manage Author', icon: 'A' }
   ];
 
   return (
     <>
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={onClose}
         />
       )}
-      
+
       <aside className={`
         fixed md:static inset-y-0 left-0 z-40
         w-52 bg-gray-900 text-white
@@ -25,11 +26,11 @@ const Sidebar = ({ isOpen, onClose }) => {
       `}>
         <div className="p-3 md:p-4 border-b border-gray-700 flex items-center justify-between">
           <h1 className="text-base md:text-lg font-bold">Admin Panel</h1>
-          <button 
+          <button
             onClick={onClose}
             className="md:hidden text-gray-300 hover:text-white text-xl"
           >
-            ✕
+            x
           </button>
         </div>
 
@@ -43,8 +44,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 flex items-center gap-2 px-4 py-2 md:py-3
                 text-xs md:text-sm
                 transition-colors duration-200
-                ${isActive 
-                  ? 'bg-blue-600 text-white' 
+                ${isActive
+                  ? 'bg-blue-600 text-white'
                   : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                 }
               `}

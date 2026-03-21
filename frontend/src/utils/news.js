@@ -40,3 +40,17 @@ export const getNewsSummary = (article) => (
   || article?.seo?.metaDescription
   || 'Open the article to read the full story.'
 );
+
+export const getNewsPath = (article) => {
+  const categorySlug = article?.category?.slug;
+  const subCategorySlug = article?.subCategory?.slug;
+  const articleSlug = article?.slug;
+
+  if (!categorySlug || !articleSlug) {
+    return '/';
+  }
+
+  return subCategorySlug
+    ? `/${categorySlug}/${subCategorySlug}/${articleSlug}`
+    : `/${categorySlug}/${articleSlug}`;
+};

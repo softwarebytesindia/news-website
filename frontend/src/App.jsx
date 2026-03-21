@@ -18,9 +18,15 @@ function App() {
     };
   }, []);
 
-  if (pathname.startsWith('/news/')) {
-    const slug = decodeURIComponent(pathname.replace('/news/', '').split('/')[0] || '');
-    return <NewsDetailPage slug={slug} />;
+  const pathSegments = pathname.split('/').filter(Boolean).map((segment) => decodeURIComponent(segment));
+  if (pathSegments.length === 2) {
+    const [categorySlug, slug] = pathSegments;
+    return <NewsDetailPage categorySlug={categorySlug} slug={slug} />;
+  }
+
+  if (pathSegments.length === 3) {
+    const [categorySlug, subCategorySlug, slug] = pathSegments;
+    return <NewsDetailPage categorySlug={categorySlug} subCategorySlug={subCategorySlug} slug={slug} />;
   }
 
   return <NewsHome />;

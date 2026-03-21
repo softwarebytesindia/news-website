@@ -6,6 +6,7 @@ import RichTextEditor from './RichTextEditor';
 const API_BASE_URL = 'http://localhost:5000';
 const API_URL = `${API_BASE_URL}/api/news`;
 const CAT_API_URL = `${API_BASE_URL}/api/categories`;
+const SUBCATEGORY_API_URL = `${API_BASE_URL}/api/subcategories`;
 const AUTHOR_API_URL = `${API_BASE_URL}/api/authors`;
 const UPLOAD_URL = `${API_BASE_URL}/api/upload/image`;
 const STATUS_OPTIONS = ['draft', 'review', 'scheduled', 'published', 'archived'];
@@ -18,6 +19,7 @@ const getInitialFormData = (newsItem = null) => ({
   featuredImageUrl: newsItem?.featuredImage?.url || '',
   featuredImageAlt: newsItem?.featuredImage?.alt || '',
   category: newsItem?.category?._id || newsItem?.category || '',
+  subCategory: newsItem?.subCategory?._id || newsItem?.subCategory || '',
   author: newsItem?.author?._id || newsItem?.author || '',
   tags: Array.isArray(newsItem?.tags) ? newsItem.tags.join(', ') : '',
   status: newsItem?.status || 'draft',
@@ -37,6 +39,7 @@ const resolveMediaUrl = (url) => {
 
 const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
   const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -54,25 +57,28 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
     const fetchOptions = async () => {
       try {
         setLoadingOptions(true);
-        const [categoriesRes, authorsRes] = await Promise.all([
+        const [categoriesRes, subCategoriesRes, authorsRes] = await Promise.all([
           fetch(CAT_API_URL),
+          fetch(SUBCATEGORY_API_URL),
           fetch(AUTHOR_API_URL)
         ]);
 
-        if (!categoriesRes.ok || !authorsRes.ok) {
+        if (!categoriesRes.ok || !subCategoriesRes.ok || !authorsRes.ok) {
           throw new Error('Failed to load form options');
         }
 
-        const [categoriesData, authorsData] = await Promise.all([
+        const [categoriesData, subCategoriesData, authorsData] = await Promise.all([
           categoriesRes.json(),
+          subCategoriesRes.json(),
           authorsRes.json()
         ]);
 
         setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        setSubCategories(Array.isArray(subCategoriesData) ? subCategoriesData : []);
         setAuthors(Array.isArray(authorsData) ? authorsData : []);
       } catch (error) {
         console.error('Error fetching form options:', error);
-        toast.error('Failed to load categories or authors');
+        toast.error('Failed to load categories, subcategories, or authors');
       } finally {
         setLoadingOptions(false);
       }
@@ -100,6 +106,11 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
   const updateFormData = (field, value) => {
     setFormData((current) => ({ ...current, [field]: value }));
   };
+
+  const filteredSubCategories = subCategories.filter((item) => {
+    const parentCategoryId = item.category?._id || item.category;
+    return parentCategoryId === formData.category;
+  });
 
   const handleImageChange = (event) => {
     const file = event.target.files?.[0] || null;
@@ -146,6 +157,7 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
           alt: formData.featuredImageAlt.trim()
         },
         category: formData.category,
+        subCategory: formData.subCategory || null,
         author: formData.author || null,
         tags: formData.tags,
         status: formData.status,
@@ -249,7 +261,14 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
             <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Category</label>
             <select
               value={formData.category}
-              onChange={(event) => updateFormData('category', event.target.value)}
+              onChange={(event) => {
+                const nextCategory = event.target.value;
+                setFormData((current) => ({
+                  ...current,
+                  category: nextCategory,
+                  subCategory: ''
+                }));
+              }}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
               disabled={loadingOptions}
@@ -257,6 +276,21 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
               <option value="">Select Category</option>
               {categories.map((category) => (
                 <option key={category._id} value={category._id}>{category.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Subcategory</label>
+            <select
+              value={formData.subCategory}
+              onChange={(event) => updateFormData('subCategory', event.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={loadingOptions || !formData.category}
+            >
+              <option value="">No Subcategory</option>
+              {filteredSubCategories.map((subCategory) => (
+                <option key={subCategory._id} value={subCategory._id}>{subCategory.name}</option>
               ))}
             </select>
           </div>

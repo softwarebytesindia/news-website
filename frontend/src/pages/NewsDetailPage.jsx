@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { NEWS_API_URL, formatNewsDate, getNewsSummary, resolveMediaUrl } from '../utils/news';
+import { NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, resolveMediaUrl } from '../utils/news';
 
-const NewsDetailPage = ({ slug }) => {
+const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
   const [article, setArticle] = useState(null);
   const [latestNews, setLatestNews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,8 +15,12 @@ const NewsDetailPage = ({ slug }) => {
         setLoading(true);
         setError('');
 
+        const articlePath = subCategorySlug
+          ? `${NEWS_API_URL}/path/${encodeURIComponent(categorySlug)}/${encodeURIComponent(subCategorySlug)}/${encodeURIComponent(slug)}`
+          : `${NEWS_API_URL}/path/${encodeURIComponent(categorySlug)}/${encodeURIComponent(slug)}`;
+
         const [articleResponse, latestResponse] = await Promise.all([
-          fetch(`${NEWS_API_URL}/slug/${encodeURIComponent(slug)}`),
+          fetch(articlePath),
           fetch(`${NEWS_API_URL}?status=published&limit=8`)
         ]);
 
@@ -48,7 +52,7 @@ const NewsDetailPage = ({ slug }) => {
     };
 
     fetchArticle();
-  }, [slug]);
+  }, [categorySlug, subCategorySlug, slug]);
 
   useEffect(() => {
     if (!article) {
@@ -135,7 +139,7 @@ const NewsDetailPage = ({ slug }) => {
                     {latestNews.map((item) => (
                       <a
                         key={item._id}
-                        href={`/news/${item.slug}`}
+                        href={getNewsPath(item)}
                         className="group no-underline flex items-start gap-3 border-b border-gray-100 pb-4 last:border-b-0 last:pb-0"
                       >
                         <div className="w-24 h-18 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
