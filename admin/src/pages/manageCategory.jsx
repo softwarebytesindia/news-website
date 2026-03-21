@@ -5,6 +5,7 @@ import CategoryFormPopup from '../components/CategoryFormPopup';
 const ManageCategory = () => {
   const [categories, setCategories] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const API_URL = 'http://localhost:5000/api/categories';
 
@@ -55,7 +56,10 @@ const ManageCategory = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-base md:text-lg font-bold text-gray-800">Manage Categories</h1>
         <button
-          onClick={() => setShowPopup(true)}
+          onClick={() => {
+            setSelectedCategory(null);
+            setShowPopup(true);
+          }}
           className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 transition-colors w-fit"
         >
           + Add Category
@@ -64,8 +68,12 @@ const ManageCategory = () => {
 
       <CategoryFormPopup 
         isOpen={showPopup} 
-        onClose={() => setShowPopup(false)} 
+        onClose={() => {
+          setShowPopup(false);
+          setSelectedCategory(null);
+        }} 
         onSuccess={fetchCategories}
+        category={selectedCategory}
       />
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -75,6 +83,7 @@ const ManageCategory = () => {
               <tr>
                 <th className="px-3 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Name</th>
                 <th className="px-3 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Slug</th>
+                <th className="px-3 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Priority</th>
                 <th className="px-3 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="px-3 md:px-4 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
@@ -91,6 +100,9 @@ const ManageCategory = () => {
                   <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-gray-600">
                     {item.slug}
                   </td>
+                  <td className="px-3 md:px-4 py-2 text-xs md:text-sm text-gray-600">
+                    {item.priority ?? 0}
+                  </td>
                   <td className="px-3 md:px-4 py-2">
                     <button
                       onClick={() => toggleActive(item._id, item.isActive)}
@@ -104,18 +116,29 @@ const ManageCategory = () => {
                     </button>
                   </td>
                   <td className="px-3 md:px-4 py-2">
-                    <button
-                      onClick={() => handleDelete(item._id)}
-                      className="text-[10px] md:text-xs text-red-600 hover:text-red-800"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          setSelectedCategory(item);
+                          setShowPopup(true);
+                        }}
+                        className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item._id)}
+                        className="text-[10px] md:text-xs text-red-600 hover:text-red-800"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {categories.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-3 md:px-4 py-6 text-center text-xs md:text-sm text-gray-500">
+                  <td colSpan={5} className="px-3 md:px-4 py-6 text-center text-xs md:text-sm text-gray-500">
                     No categories found. Add your first category!
                   </td>
                 </tr>

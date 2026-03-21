@@ -41,3 +41,12 @@
   border-radius: 1rem;
   margin: 1.25rem 0;
 }
+
+.breadcrumb-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.breadcrumb-scroll::-webkit-scrollbar {
+  display: none;
+}
