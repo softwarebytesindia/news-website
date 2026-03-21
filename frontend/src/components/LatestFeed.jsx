@@ -4,7 +4,6 @@ const LatestFeed = ({ articles, loading, error }) => (
   <section>
     <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
       <h2 className="text-lg sm:text-xl font-bold text-gray-900 m-0 tracking-tight">Latest News</h2>
-      <span className="text-xs sm:text-sm font-semibold text-gray-500">Excluding current breaking news</span>
     </div>
 
     {loading ? (

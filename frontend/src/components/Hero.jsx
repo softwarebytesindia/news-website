@@ -5,14 +5,12 @@ const Hero = ({ articles, loading, error }) => (
     <div className="max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-red-600 mb-1">Top Hero</p>
           <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Breaking News</h2>
         </div>
-        <span className="text-xs text-gray-500">Newest 4 breaking stories</span>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, index) => (
             <div key={index} className="bg-white rounded-xl overflow-hidden shadow-sm animate-pulse">
               <div className="aspect-[3/2] bg-gray-200" />
@@ -31,7 +29,7 @@ const Hero = ({ articles, loading, error }) => (
           No breaking news is selected right now.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {articles.map((news) => (
             <article key={news._id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <div className="relative aspect-[3/2] overflow-hidden">
