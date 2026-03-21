@@ -4,6 +4,7 @@ import CategoryNewsPage from './pages/CategoryNewsPage';
 import CategoryOrArticlePage from './pages/CategoryOrArticlePage';
 import NewsHome from './pages/NewsHome';
 import NewsDetailPage from './pages/NewsDetailPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 const getCurrentPath = () => window.location.pathname;
 
@@ -24,6 +25,10 @@ function App() {
   const pathSegments = pathname.split('/').filter(Boolean).map((segment) => decodeURIComponent(segment));
   if (pathname === '/about') {
     return <About />;
+  }
+
+  if (pathname === '/privacy') {
+    return <PrivacyPolicy />;
   }
 
   if (pathSegments.length === 1) {
