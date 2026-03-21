@@ -4,12 +4,19 @@ import CategorySlider from '../components/CategorySlider';
 import Hero from '../components/Hero';
 import LatestFeed from '../components/LatestFeed';
 import Footer from '../components/Footer';
-import { NEWS_API_URL, sortBreakingNews } from '../utils/news';
+import { applySeoMeta, NEWS_API_URL, sortBreakingNews } from '../utils/news';
 
 const NewsHome = () => {
   const [articles, setArticles] = useState([]);
   const [loadingNews, setLoadingNews] = useState(true);
   const [newsError, setNewsError] = useState('');
+
+  useEffect(() => {
+    return applySeoMeta({
+      title: 'New Bharat Digital',
+      description: 'ताजा खबरें, ब्रेकिंग न्यूज़ और सभी प्रमुख श्रेणियों की हिंदी समाचार अपडेट पढ़ें।'
+    });
+  }, []);
 
   useEffect(() => {
     const fetchNews = async () => {

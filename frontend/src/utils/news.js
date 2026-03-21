@@ -63,3 +63,33 @@ export const navigateTo = (path) => {
   window.history.pushState({}, '', path);
   window.dispatchEvent(new Event('popstate'));
 };
+
+const ensureMetaTag = (name) => {
+  let element = document.head.querySelector(`meta[name="${name}"]`);
+
+  if (!element) {
+    element = document.createElement('meta');
+    element.setAttribute('name', name);
+    document.head.appendChild(element);
+  }
+
+  return element;
+};
+
+export const applySeoMeta = ({ title = '', description = '' }) => {
+  if (typeof document === 'undefined') {
+    return () => {};
+  }
+
+  const previousTitle = document.title;
+  const descriptionTag = ensureMetaTag('description');
+  const previousDescription = descriptionTag.getAttribute('content') || '';
+
+  document.title = title || previousTitle;
+  descriptionTag.setAttribute('content', description || '');
+
+  return () => {
+    document.title = previousTitle;
+    descriptionTag.setAttribute('content', previousDescription);
+  };
+};

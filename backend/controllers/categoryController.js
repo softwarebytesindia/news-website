@@ -4,12 +4,22 @@ const normalizeName = (value = '') => String(value).trim().toLowerCase();
 
 const createCategory = async (req, res) => {
   try {
-    const { name, description, priority } = req.body;
+    const { name, description, priority, seo } = req.body;
     const normalizedName = normalizeName(name);
     const slug = normalizedName.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const normalizedPriority = Number.isFinite(Number(priority)) ? Math.max(0, Number(priority)) : 0;
+    const seoInput = seo && typeof seo === 'object' ? seo : {};
     
-    const category = new NewsCategory({ name: normalizedName, slug, description, priority: normalizedPriority });
+    const category = new NewsCategory({
+      name: normalizedName,
+      slug,
+      description,
+      priority: normalizedPriority,
+      seo: {
+        metaTitle: typeof seoInput.metaTitle === 'string' ? seoInput.metaTitle.trim() : '',
+        metaDescription: typeof seoInput.metaDescription === 'string' ? seoInput.metaDescription.trim() : ''
+      }
+    });
     await category.save();
     res.status(201).json(category);
   } catch (error) {
@@ -38,14 +48,25 @@ const getCategoryById = async (req, res) => {
 
 const updateCategory = async (req, res) => {
   try {
-    const { name, description, priority, isActive } = req.body;
+    const { name, description, priority, isActive, seo } = req.body;
     const normalizedName = normalizeName(name);
     const slug = normalizedName.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const normalizedPriority = Number.isFinite(Number(priority)) ? Math.max(0, Number(priority)) : 0;
+    const seoInput = seo && typeof seo === 'object' ? seo : {};
     
     const category = await NewsCategory.findByIdAndUpdate(
       req.params.id, 
-      { name: normalizedName, slug, description, priority: normalizedPriority, isActive }, 
+      {
+        name: normalizedName,
+        slug,
+        description,
+        priority: normalizedPriority,
+        isActive,
+        seo: {
+          metaTitle: typeof seoInput.metaTitle === 'string' ? seoInput.metaTitle.trim() : '',
+          metaDescription: typeof seoInput.metaDescription === 'string' ? seoInput.metaDescription.trim() : ''
+        }
+      }, 
       { new: true, runValidators: true }
     );
     if (!category) return res.status(404).json({ error: 'Category not found' });

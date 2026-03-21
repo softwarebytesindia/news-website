@@ -26,7 +26,6 @@ const getInitialFormData = (newsItem = null) => ({
   isBreaking: Boolean(newsItem?.isBreaking),
   metaTitle: newsItem?.seo?.metaTitle || '',
   metaDescription: newsItem?.seo?.metaDescription || '',
-  keywords: Array.isArray(newsItem?.seo?.keywords) ? newsItem.seo.keywords.join(', ') : '',
   location: newsItem?.location || '',
   priority: newsItem?.priority ?? 0
 });
@@ -164,8 +163,7 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
         isBreaking: formData.isBreaking,
         seo: {
           metaTitle: formData.metaTitle.trim(),
-          metaDescription: formData.metaDescription.trim(),
-          keywords: formData.keywords
+          metaDescription: formData.metaDescription.trim()
         },
         location: formData.location.trim(),
         priority: Number(formData.priority) || 0
@@ -398,17 +396,6 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
                   value={formData.metaTitle}
                   onChange={(event) => updateFormData('metaTitle', event.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">SEO Keywords</label>
-                <input
-                  type="text"
-                  value={formData.keywords}
-                  onChange={(event) => updateFormData('keywords', event.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Comma separated keywords"
                 />
               </div>
 

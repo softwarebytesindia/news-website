@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Breadcrumb from '../components/Breadcrumb';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
+import { applySeoMeta, NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
 
 const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
   const [article, setArticle] = useState(null);
@@ -60,12 +60,10 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
       return undefined;
     }
 
-    const previousTitle = document.title;
-    document.title = article.seo?.metaTitle || article.title;
-
-    return () => {
-      document.title = previousTitle;
-    };
+    return applySeoMeta({
+      title: article.seo?.metaTitle || article.title,
+      description: article.seo?.metaDescription || article.excerpt || ''
+    });
   }, [article]);
 
   const breadcrumbItems = article ? [

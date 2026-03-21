@@ -17,6 +17,10 @@ const newsCategorySchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  seo: {
+    metaTitle: { type: String, trim: true, default: '' },
+    metaDescription: { type: String, trim: true, default: '' }
+  },
   priority: {
     type: Number,
     default: 0,

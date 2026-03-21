@@ -74,8 +74,7 @@ const newsSchema = new mongoose.Schema(
     },
     seo: {
       metaTitle: { type: String, trim: true, default: '' },
-      metaDescription: { type: String, trim: true, default: '' },
-      keywords: [{ type: String, trim: true, lowercase: true }]
+      metaDescription: { type: String, trim: true, default: '' }
     },
     location: {
       type: String,

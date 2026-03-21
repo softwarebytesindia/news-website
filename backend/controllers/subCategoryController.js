@@ -28,19 +28,24 @@ const validateCategory = async (categoryId) => {
 
 const createSubCategory = async (req, res) => {
   try {
-    const { category, name, description, isActive } = req.body;
+    const { category, name, description, isActive, seo } = req.body;
     if (!name || !String(name).trim()) {
       throw new Error('Subcategory name is required');
     }
 
     await validateCategory(category);
+    const seoInput = seo && typeof seo === 'object' ? seo : {};
 
     const payload = {
       category,
       name: normalizeName(name),
       slug: slugify(name),
       description: typeof description === 'string' ? description.trim() : '',
-      isActive: typeof isActive === 'boolean' ? isActive : true
+      isActive: typeof isActive === 'boolean' ? isActive : true,
+      seo: {
+        metaTitle: typeof seoInput.metaTitle === 'string' ? seoInput.metaTitle.trim() : '',
+        metaDescription: typeof seoInput.metaDescription === 'string' ? seoInput.metaDescription.trim() : ''
+      }
     };
 
     const subCategory = new SubCategory(payload);
@@ -84,19 +89,24 @@ const getSubCategoryById = async (req, res) => {
 
 const updateSubCategory = async (req, res) => {
   try {
-    const { category, name, description, isActive } = req.body;
+    const { category, name, description, isActive, seo } = req.body;
     if (!name || !String(name).trim()) {
       throw new Error('Subcategory name is required');
     }
 
     await validateCategory(category);
+    const seoInput = seo && typeof seo === 'object' ? seo : {};
 
     const payload = {
       category,
       name: normalizeName(name),
       slug: slugify(name),
       description: typeof description === 'string' ? description.trim() : '',
-      isActive: typeof isActive === 'boolean' ? isActive : true
+      isActive: typeof isActive === 'boolean' ? isActive : true,
+      seo: {
+        metaTitle: typeof seoInput.metaTitle === 'string' ? seoInput.metaTitle.trim() : '',
+        metaDescription: typeof seoInput.metaDescription === 'string' ? seoInput.metaDescription.trim() : ''
+      }
     };
 
     const subCategory = await SubCategory.findByIdAndUpdate(req.params.id, payload, {

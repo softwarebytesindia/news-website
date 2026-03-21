@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Breadcrumb from '../components/Breadcrumb';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
-import { NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
+import { applySeoMeta, NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
 
 const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
   const [pageData, setPageData] = useState(null);
@@ -37,6 +37,24 @@ const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
 
     fetchListing();
   }, [categorySlug, subCategorySlug]);
+
+  useEffect(() => {
+    if (!pageData) {
+      return undefined;
+    }
+
+    const activeSection = pageData.subCategory || pageData.category || {};
+    const fallbackTitle = pageData.subCategory
+      ? `${pageData.subCategory.name} News | ${pageData.category?.name || 'News'} | New Bharat Digital`
+      : `${pageData.category?.name || 'News'} News | New Bharat Digital`;
+    const fallbackDescription = activeSection.description
+      || `Read the latest ${activeSection.name || 'news'} updates on New Bharat Digital.`;
+
+    return applySeoMeta({
+      title: activeSection.seo?.metaTitle || fallbackTitle,
+      description: activeSection.seo?.metaDescription || fallbackDescription
+    });
+  }, [pageData]);
 
   const category = pageData?.category || null;
   const subCategory = pageData?.subCategory || null;

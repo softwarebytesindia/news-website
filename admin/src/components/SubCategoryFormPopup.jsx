@@ -8,7 +8,9 @@ const SUBCATEGORY_API_URL = 'http://localhost:5000/api/subcategories';
 const getInitialFormData = (subCategory = null) => ({
   category: subCategory?.category?._id || subCategory?.category || '',
   name: subCategory?.name || '',
-  description: subCategory?.description || ''
+  description: subCategory?.description || '',
+  metaTitle: subCategory?.seo?.metaTitle || '',
+  metaDescription: subCategory?.seo?.metaDescription || ''
 });
 
 const SubCategoryFormPopup = ({ isOpen, onClose, onSuccess, subCategory }) => {
@@ -56,7 +58,11 @@ const SubCategoryFormPopup = ({ isOpen, onClose, onSuccess, subCategory }) => {
         body: JSON.stringify({
           category: formData.category,
           name: formData.name.trim(),
-          description: formData.description.trim()
+          description: formData.description.trim(),
+          seo: {
+            metaTitle: formData.metaTitle.trim(),
+            metaDescription: formData.metaDescription.trim()
+          }
         })
       });
 
@@ -118,6 +124,35 @@ const SubCategoryFormPopup = ({ isOpen, onClose, onSuccess, subCategory }) => {
             placeholder="Optional description"
             disabled={loading}
           />
+        </div>
+
+        <div className="border-t border-gray-200 pt-3">
+          <h4 className="text-sm font-semibold text-gray-800 mb-3">SEO</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Meta Title</label>
+              <input
+                type="text"
+                value={formData.metaTitle}
+                onChange={(event) => setFormData((current) => ({ ...current, metaTitle: event.target.value }))}
+                className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="SEO title for this subcategory page"
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Meta Description</label>
+              <textarea
+                value={formData.metaDescription}
+                onChange={(event) => setFormData((current) => ({ ...current, metaDescription: event.target.value }))}
+                className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows={3}
+                placeholder="SEO description for this subcategory page"
+                disabled={loading}
+              />
+            </div>
+          </div>
         </div>
 
         <button

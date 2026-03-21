@@ -22,6 +22,10 @@ const subCategorySchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  seo: {
+    metaTitle: { type: String, trim: true, default: '' },
+    metaDescription: { type: String, trim: true, default: '' }
+  },
   isActive: {
     type: Boolean,
     default: true

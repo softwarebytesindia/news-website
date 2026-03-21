@@ -5,7 +5,9 @@ import Popup from './Popup';
 const getInitialFormData = (category = null) => ({
   name: category?.name || '',
   description: category?.description || '',
-  priority: category?.priority ?? 0
+  priority: category?.priority ?? 0,
+  metaTitle: category?.seo?.metaTitle || '',
+  metaDescription: category?.seo?.metaDescription || ''
 });
 
 const CategoryFormPopup = ({ isOpen, onClose, onSuccess, category }) => {
@@ -29,7 +31,11 @@ const CategoryFormPopup = ({ isOpen, onClose, onSuccess, category }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          priority: Number(formData.priority) || 0
+          priority: Number(formData.priority) || 0,
+          seo: {
+            metaTitle: formData.metaTitle.trim(),
+            metaDescription: formData.metaDescription.trim()
+          }
         }),
       });
 
@@ -89,6 +95,33 @@ const CategoryFormPopup = ({ isOpen, onClose, onSuccess, category }) => {
             rows={2}
             placeholder="Optional description"
           />
+        </div>
+
+        <div className="border-t border-gray-200 pt-3">
+          <h4 className="text-sm font-semibold text-gray-800 mb-3">SEO</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Meta Title</label>
+              <input
+                type="text"
+                value={formData.metaTitle}
+                onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+                className="w-full px-3 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="SEO title for this category page"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Meta Description</label>
+              <textarea
+                value={formData.metaDescription}
+                onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                className="w-full px-3 py-1.5 md:py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows={3}
+                placeholder="SEO description for this category page"
+              />
+            </div>
+          </div>
         </div>
 
         <button

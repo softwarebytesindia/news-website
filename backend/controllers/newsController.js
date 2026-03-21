@@ -171,8 +171,7 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
     breakingAt,
     seo: {
       metaTitle: typeof seoInput.metaTitle === 'string' ? seoInput.metaTitle.trim() : (existingSeo.metaTitle || title),
-      metaDescription: requestedMetaDescription || existingSeo.metaDescription || excerpt,
-      keywords: seoInput.keywords !== undefined ? normalizeTags(seoInput.keywords) : (existingSeo.keywords || [])
+      metaDescription: requestedMetaDescription || existingSeo.metaDescription || excerpt
     },
     location: typeof input.location === 'string' ? input.location.trim() : (existingNews?.location || ''),
     priority: Math.max(0, priority)
