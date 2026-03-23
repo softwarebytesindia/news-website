@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import About from './pages/About';
 import CategoryNewsPage from './pages/CategoryNewsPage';
 import CategoryOrArticlePage from './pages/CategoryOrArticlePage';
+import Contact from './pages/Contact';
 import NewsHome from './pages/NewsHome';
 import NewsDetailPage from './pages/NewsDetailPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -29,6 +30,10 @@ function App() {
 
   if (pathname === '/privacy') {
     return <PrivacyPolicy />;
+  }
+
+  if (pathname === '/contact') {
+    return <Contact />;
   }
 
   if (pathSegments.length === 1) {
