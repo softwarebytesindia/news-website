@@ -21,6 +21,10 @@ mongoose.connect('mongodb://localhost:27017/newsdb')
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log(err));
 
+app.get('/', (req, res) => {
+  res.send('News API is running');
+});
+
 app.use('/api/news', newsRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/subcategories', subCategoryRoutes);
@@ -31,10 +35,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'admin')));
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin', 'index.html'));
-});
-
-app.get('/', (req, res) => {
-  res.send('News API is running');
 });
 
 app.listen(PORT, () => {

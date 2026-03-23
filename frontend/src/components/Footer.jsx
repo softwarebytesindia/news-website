@@ -1,14 +1,27 @@
+import { useEffect, useState } from 'react';
+import { navigateTo } from '../utils/news';
+
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [categories, setCategories] = useState([]);
 
-  const categories = [
-    { name: 'World', href: '/world' },
-    { name: 'Politics', href: '/politics' },
-    { name: 'Business', href: '/business' },
-    { name: 'Technology', href: '/technology' },
-    { name: 'Sports', href: '/sports' },
-    { name: 'Entertainment', href: '/entertainment' },
-  ];
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`/api/categories`);
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const activeCategories = data
+            .filter((cat) => cat?.isActive !== false && cat?.slug)
+            .map((cat) => ({ name: cat.name, href: `/${cat.slug}` }));
+          setCategories(activeCategories);
+        }
+      } catch (error) {
+        console.error('Error fetching footer categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const company = [
     { name: 'About Us', href: '/about' },
@@ -90,7 +103,11 @@ const Footer = () => {
             <ul className="list-none p-0 m-0 flex flex-col gap-1">
               {categories.map((item) => (
                 <li key={item.name}>
-                  <a href={item.href} className="text-gray-400 no-underline text-xs hover:text-white transition-colors duration-200">{item.name}</a>
+                  <a 
+                    href={item.href} 
+                    onClick={(e) => { e.preventDefault(); navigateTo(item.href); }}
+                    className="text-gray-400 no-underline text-xs hover:text-white transition-colors duration-200"
+                  >{item.name}</a>
                 </li>
               ))}
             </ul>

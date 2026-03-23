@@ -1,10 +1,10 @@
-﻿export const API_BASE_URL = 'http://localhost:5000';
-export const NEWS_API_URL = `${API_BASE_URL}/api/news`;
+﻿export const API_BASE_URL = '';
+export const NEWS_API_URL = `/api/news`;
 
 export const resolveMediaUrl = (url) => {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
-  return `${API_BASE_URL}${url}`;
+  return url.startsWith('/') ? url : `/${url}`;
 };
 
 export const formatNewsDate = (value) => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { API_BASE_URL, navigateTo } from '../utils/news';
+import { navigateTo } from '../utils/news';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -8,7 +8,7 @@ const Navbar = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/categories`);
+        const response = await fetch(`/api/categories`);
 
         if (!response.ok) {
           throw new Error('Failed to load categories');
