@@ -108,11 +108,11 @@ const PrivacyPolicy = () => {
           <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.5fr)_360px] gap-8 items-start">
             <div className="space-y-6">
               <div className="rounded-[28px] bg-white p-6 sm:p-8 shadow-sm border border-stone-200">
-                <div className="flex items-center gap-3 mb-5">
+                <div className="flex items-center gap-3 mb-10">
                   <span className="h-10 w-1 rounded-full bg-red-600" />
                   <div>
                     <p className="text-xs font-semibold tracking-[0.24em] uppercase text-red-600">Privacy Overview</p>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">गोपनीयता और पारदर्शिता</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-stone-900">गोपनीयता और पारदर्शिता</h2>
                   </div>
                 </div>
 

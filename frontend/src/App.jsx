@@ -3,9 +3,11 @@ import About from './pages/About';
 import CategoryNewsPage from './pages/CategoryNewsPage';
 import CategoryOrArticlePage from './pages/CategoryOrArticlePage';
 import Contact from './pages/Contact';
+import Disclaimer from './pages/Disclaimer';
 import NewsHome from './pages/NewsHome';
 import NewsDetailPage from './pages/NewsDetailPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
 
 const getCurrentPath = () => window.location.pathname;
 
@@ -34,6 +36,14 @@ function App() {
 
   if (pathname === '/contact') {
     return <Contact />;
+  }
+
+  if (pathname === '/terms') {
+    return <TermsAndConditions />;
+  }
+
+  if (pathname === '/disclaimer') {
+    return <Disclaimer />;
   }
 
   if (pathSegments.length === 1) {
