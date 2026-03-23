@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Popup from './Popup';
 import RichTextEditor from './RichTextEditor';
+import HindiInput from './HindiInput';
 
 const API_BASE_URL = 'http://localhost:5000';
 const API_URL = `${API_BASE_URL}/api/news`;
@@ -27,7 +28,10 @@ const getInitialFormData = (newsItem = null) => ({
   metaTitle: newsItem?.seo?.metaTitle || '',
   metaDescription: newsItem?.seo?.metaDescription || '',
   location: newsItem?.location || '',
-  priority: newsItem?.priority ?? 0
+  priority: newsItem?.priority ?? 0,
+  hindiTitle: newsItem?.hindiTitle || '',
+  hindiExcerpt: newsItem?.hindiExcerpt || '',
+  hindiContent: newsItem?.hindiContent || ''
 });
 
 const resolveMediaUrl = (url) => {
@@ -166,7 +170,10 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
           metaDescription: formData.metaDescription.trim()
         },
         location: formData.location.trim(),
-        priority: Number(formData.priority) || 0
+        priority: Number(formData.priority) || 0,
+        hindiTitle: formData.hindiTitle.trim(),
+        hindiExcerpt: formData.hindiExcerpt.trim(),
+        hindiContent: formData.hindiContent.trim()
       };
 
       const url = newsItem ? `${API_URL}/${newsItem._id}` : API_URL;
@@ -385,6 +392,48 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
               />
             </div>
           )}
+
+          {/* ── Hindi Article Content ── */}
+          <div className="md:col-span-2 border-t border-gray-200 pt-4">
+            <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 text-xs font-bold">हि</span>
+              Hindi Article Content
+              <span className="text-xs font-normal text-gray-500">(type in English — press Space to convert to Hindi)</span>
+            </h4>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Hindi Title</label>
+                <HindiInput
+                  value={formData.hindiTitle}
+                  onChange={(val) => updateFormData('hindiTitle', val)}
+                  placeholder="e.g. type 'namaskar duniya' → नमस्कार दुनिया"
+                  className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Hindi Excerpt / Summary</label>
+                <HindiInput
+                  value={formData.hindiExcerpt}
+                  onChange={(val) => updateFormData('hindiExcerpt', val)}
+                  multiline
+                  rows={3}
+                  placeholder="Short Hindi summary…"
+                  className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Hindi Content</label>
+                <HindiInput
+                  value={formData.hindiContent}
+                  onChange={(val) => updateFormData('hindiContent', val)}
+                  multiline
+                  rows={8}
+                  placeholder="Write main article content in Hindi here…"
+                  className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="md:col-span-2 border-t border-gray-200 pt-4">
             <h4 className="text-sm font-semibold text-gray-800 mb-3">SEO</h4>

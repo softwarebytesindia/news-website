@@ -174,7 +174,10 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
       metaDescription: requestedMetaDescription || existingSeo.metaDescription || excerpt
     },
     location: typeof input.location === 'string' ? input.location.trim() : (existingNews?.location || ''),
-    priority: Math.max(0, priority)
+    priority: Math.max(0, priority),
+    hindiTitle: typeof input.hindiTitle === 'string' ? input.hindiTitle.trim() : (existingNews?.hindiTitle || ''),
+    hindiExcerpt: typeof input.hindiExcerpt === 'string' ? input.hindiExcerpt.trim() : (existingNews?.hindiExcerpt || ''),
+    hindiContent: typeof input.hindiContent === 'string' ? input.hindiContent.trim() : (existingNews?.hindiContent || '')
   };
 };
 

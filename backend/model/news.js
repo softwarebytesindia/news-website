@@ -85,6 +85,21 @@ const newsSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0
+    },
+    hindiTitle: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    hindiExcerpt: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    hindiContent: {
+      type: String,
+      trim: true,
+      default: ''
     }
   },
   {
