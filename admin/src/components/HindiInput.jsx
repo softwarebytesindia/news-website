@@ -48,6 +48,17 @@ const SHOW_SUGGESTIONS_FOR = new Set([
 ]);
 
 /* ─── Main Component ─── */
+const TOOLBAR_ITEMS = [
+  { label: 'Normal', tag: 'p', title: 'Normal paragraph' },
+  { label: 'H2', tag: 'h2', title: 'Heading 2' },
+  { label: 'H3', tag: 'h3', title: 'Heading 3' },
+  { label: 'H4', tag: 'h4', title: 'Heading 4' },
+  { label: 'H5', tag: 'h5', title: 'Heading 5' },
+  'divider',
+  { label: '𝐁', tag: 'strong', title: 'Bold', inline: true },
+  { label: '𝘐', tag: 'em', title: 'Italic', inline: true },
+];
+
 const HindiInput = ({
   value = '',
   onChange,
@@ -57,6 +68,7 @@ const HindiInput = ({
   className = '',
   required = false,
   fontFamily = 'Hind',
+  toolbar = false,
 }) => {
   const inputRef = useRef(null);
   // suggestions state: { list, wordStart, wordLength, anchorTop, anchorLeft }
@@ -148,7 +160,35 @@ const HindiInput = ({
       if (!el) return;
       el.selectionStart = pos;
       el.selectionEnd = pos;
+      el.focus();
     }, 0);
+  };
+
+  /* ─── Wrap selection or insert HTML tag at cursor ─── */
+  const wrapTag = (tag, inline = false) => {
+    const el = inputRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = value.slice(start, end).trim();
+
+    let inserted;
+    if (selected) {
+      inserted = `<${tag}>${selected}</${tag}>`;
+    } else if (inline) {
+      inserted = `<${tag}></${tag}>`;
+    } else {
+      // Block element — wrap on its own line
+      const before = value.slice(0, start);
+      const needNewline = before.length > 0 && !before.endsWith('\n');
+      inserted = (needNewline ? '\n' : '') + `<${tag}></${tag}>\n`;
+    }
+
+    const newText = value.slice(0, start) + inserted + value.slice(end);
+    onChange(newText);
+    // Place cursor inside the closing tag
+    const closingLen = `</${tag}>`.length + (inline || selected ? 0 : 1);
+    moveCursor(start + inserted.length - closingLen);
   };
 
   /* ─── User picks a different suggestion ─── */
@@ -191,10 +231,35 @@ const HindiInput = ({
   };
 
   return (
-    <div className="hindi-input-wrapper">
+    <div className="hindi-input-wrapper" style={toolbar ? { flexDirection: 'column', alignItems: 'stretch' } : {}}>
+      {/* ─── Formatting Toolbar ─── */}
+      {toolbar && multiline && (
+        <div className="hi-toolbar">
+          {TOOLBAR_ITEMS.map((item, i) =>
+            item === 'divider' ? (
+              <span key={i} className="wp-toolbar-divider" />
+            ) : (
+              <button
+                key={item.tag}
+                type="button"
+                title={item.title}
+                className="hi-toolbar-btn"
+                onMouseDown={(e) => {
+                  e.preventDefault(); // don't blur textarea
+                  wrapTag(item.tag, item.inline);
+                }}
+              >
+                {item.label}
+              </button>
+            )
+          )}
+        </div>
+      )}
+
       <span
         className="hindi-badge"
         title="Hindi mode — type in English, press Space to convert"
+        style={toolbar && multiline ? { top: '42px' } : {}}
       >
         हि
       </span>

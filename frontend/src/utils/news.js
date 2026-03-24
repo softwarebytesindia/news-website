@@ -1,5 +1,7 @@
-﻿export const API_BASE_URL = '';
+export const API_BASE_URL = '';
 export const NEWS_API_URL = `/api/news`;
+export const SITE_NAME = 'New Bharat Digital';
+export const SITE_URL = window.location.origin;
 
 export const resolveMediaUrl = (url) => {
   if (!url) return '';
@@ -64,32 +66,115 @@ export const navigateTo = (path) => {
   window.dispatchEvent(new Event('popstate'));
 };
 
-const ensureMetaTag = (name) => {
-  let element = document.head.querySelector(`meta[name="${name}"]`);
+/* ── Meta tag helpers ── */
 
-  if (!element) {
-    element = document.createElement('meta');
-    element.setAttribute('name', name);
-    document.head.appendChild(element);
+const ensureMetaName = (name) => {
+  let el = document.head.querySelector(`meta[name="${name}"]`);
+  if (!el) {
+    el = document.createElement('meta');
+    el.setAttribute('name', name);
+    document.head.appendChild(el);
   }
-
-  return element;
+  return el;
 };
 
-export const applySeoMeta = ({ title = '', description = '' }) => {
-  if (typeof document === 'undefined') {
-    return () => {};
+const ensureMetaProp = (property) => {
+  let el = document.head.querySelector(`meta[property="${property}"]`);
+  if (!el) {
+    el = document.createElement('meta');
+    el.setAttribute('property', property);
+    document.head.appendChild(el);
   }
+  return el;
+};
 
-  const previousTitle = document.title;
-  const descriptionTag = ensureMetaTag('description');
-  const previousDescription = descriptionTag.getAttribute('content') || '';
+const ensureLink = (rel, id) => {
+  let el = document.head.querySelector(`link[rel="${rel}"]${id ? `[data-id="${id}"]` : ''}`);
+  if (!el) {
+    el = document.createElement('link');
+    el.setAttribute('rel', rel);
+    if (id) el.setAttribute('data-id', id);
+    document.head.appendChild(el);
+  }
+  return el;
+};
 
-  document.title = title || previousTitle;
-  descriptionTag.setAttribute('content', description || '');
+/**
+ * applySeoMeta — sets all important SEO meta tags and returns a cleanup fn.
+ * @param {object} opts
+ * @param {string} opts.title
+ * @param {string} [opts.description]
+ * @param {string} [opts.image]       - absolute image URL for OG/Twitter
+ * @param {string} [opts.url]         - canonical URL (defaults to current href)
+ * @param {'website'|'article'} [opts.type]
+ * @param {string} [opts.locale]      - e.g. 'hi_IN'
+ */
+export const applySeoMeta = ({
+  title = '',
+  description = '',
+  image = '',
+  url = '',
+  type = 'website',
+  locale = 'hi_IN'
+} = {}) => {
+  if (typeof document === 'undefined') return () => {};
 
+  const canonical = url || window.location.href;
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
+
+  // Snapshot previous values for cleanup
+  const prev = {
+    title: document.title,
+    description: ensureMetaName('description').getAttribute('content') || '',
+    canonical: ensureLink('canonical', 'seo').getAttribute('href') || '',
+    ogTitle: ensureMetaProp('og:title').getAttribute('content') || '',
+    ogDesc: ensureMetaProp('og:description').getAttribute('content') || '',
+    ogImage: ensureMetaProp('og:image').getAttribute('content') || '',
+    ogUrl: ensureMetaProp('og:url').getAttribute('content') || '',
+    ogType: ensureMetaProp('og:type').getAttribute('content') || '',
+    ogLocale: ensureMetaProp('og:locale').getAttribute('content') || '',
+    ogSiteName: ensureMetaProp('og:site_name').getAttribute('content') || '',
+    twCard: ensureMetaName('twitter:card').getAttribute('content') || '',
+    twTitle: ensureMetaName('twitter:title').getAttribute('content') || '',
+    twDesc: ensureMetaName('twitter:description').getAttribute('content') || '',
+    twImage: ensureMetaName('twitter:image').getAttribute('content') || '',
+  };
+
+  // Apply
+  document.title = fullTitle;
+  ensureMetaName('description').setAttribute('content', description);
+  ensureLink('canonical', 'seo').setAttribute('href', canonical);
+
+  // Open Graph
+  ensureMetaProp('og:title').setAttribute('content', fullTitle);
+  ensureMetaProp('og:description').setAttribute('content', description);
+  ensureMetaProp('og:image').setAttribute('content', image);
+  ensureMetaProp('og:url').setAttribute('content', canonical);
+  ensureMetaProp('og:type').setAttribute('content', type);
+  ensureMetaProp('og:locale').setAttribute('content', locale);
+  ensureMetaProp('og:site_name').setAttribute('content', SITE_NAME);
+
+  // Twitter Card
+  ensureMetaName('twitter:card').setAttribute('content', image ? 'summary_large_image' : 'summary');
+  ensureMetaName('twitter:title').setAttribute('content', fullTitle);
+  ensureMetaName('twitter:description').setAttribute('content', description);
+  ensureMetaName('twitter:image').setAttribute('content', image);
+
+  // Cleanup fn
   return () => {
-    document.title = previousTitle;
-    descriptionTag.setAttribute('content', previousDescription);
+    document.title = prev.title;
+    ensureMetaName('description').setAttribute('content', prev.description);
+    ensureLink('canonical', 'seo').setAttribute('href', prev.canonical);
+    ensureMetaProp('og:title').setAttribute('content', prev.ogTitle);
+    ensureMetaProp('og:description').setAttribute('content', prev.ogDesc);
+    ensureMetaProp('og:image').setAttribute('content', prev.ogImage);
+    ensureMetaProp('og:url').setAttribute('content', prev.ogUrl);
+    ensureMetaProp('og:type').setAttribute('content', prev.ogType);
+    ensureMetaProp('og:locale').setAttribute('content', prev.ogLocale);
+    ensureMetaProp('og:site_name').setAttribute('content', prev.ogSiteName);
+    ensureMetaName('twitter:card').setAttribute('content', prev.twCard);
+    ensureMetaName('twitter:title').setAttribute('content', prev.twTitle);
+    ensureMetaName('twitter:description').setAttribute('content', prev.twDesc);
+    ensureMetaName('twitter:image').setAttribute('content', prev.twImage);
   };
 };

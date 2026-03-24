@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Block admin panel
+Disallow: /admin/
+Disallow: /api/
+
+# Crawl delay for polite crawling
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: http://localhost:5000/sitemap.xml

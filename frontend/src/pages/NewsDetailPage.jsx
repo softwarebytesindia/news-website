@@ -60,10 +60,55 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
       return undefined;
     }
 
-    return applySeoMeta({
+    const imageUrl = article.featuredImage?.url
+      ? (article.featuredImage.url.startsWith('http') ? article.featuredImage.url : `${window.location.origin}${article.featuredImage.url}`)
+      : '';
+    const canonicalUrl = window.location.href;
+    const description = article.seo?.metaDescription || article.excerpt || '';
+
+    const cleanup = applySeoMeta({
       title: article.seo?.metaTitle || article.title,
-      description: article.seo?.metaDescription || article.excerpt || ''
+      description,
+      image: imageUrl,
+      url: canonicalUrl,
+      type: 'article',
+      locale: 'hi_IN'
     });
+
+    // JSON-LD structured data
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'NewsArticle',
+      headline: article.title,
+      description,
+      image: imageUrl ? [imageUrl] : [],
+      datePublished: article.createdAt,
+      dateModified: article.updatedAt || article.createdAt,
+      author: article.author?.name
+        ? [{ '@type': 'Person', name: article.author.name }]
+        : [{ '@type': 'Organization', name: 'New Bharat Digital' }],
+      publisher: {
+        '@type': 'Organization',
+        name: 'New Bharat Digital',
+        logo: { '@type': 'ImageObject', url: `${window.location.origin}/news.webp` }
+      },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+      inLanguage: 'hi'
+    };
+
+    let scriptEl = document.head.querySelector('script[data-type="news-jsonld"]');
+    if (!scriptEl) {
+      scriptEl = document.createElement('script');
+      scriptEl.setAttribute('type', 'application/ld+json');
+      scriptEl.setAttribute('data-type', 'news-jsonld');
+      document.head.appendChild(scriptEl);
+    }
+    scriptEl.textContent = JSON.stringify(jsonLd);
+
+    return () => {
+      cleanup();
+      scriptEl?.remove();
+    };
   }, [article]);
 
   const breadcrumbItems = article ? [

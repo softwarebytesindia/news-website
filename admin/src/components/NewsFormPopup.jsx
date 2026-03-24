@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import Popup from './Popup';
 import HindiInput from './HindiInput';
 
 const API_BASE_URL = 'http://localhost:5000';
@@ -49,6 +48,24 @@ const resolveMediaUrl = (url) => {
   return `${API_BASE_URL}${url}`;
 };
 
+/* ── Sidebar section wrapper ── */
+const SideSection = ({ title, children }) => (
+  <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h4>
+    </div>
+    <div className="p-4 space-y-3">{children}</div>
+  </div>
+);
+
+/* ── Sidebar field label ── */
+const FieldLabel = ({ children }) => (
+  <label className="block text-xs font-medium text-gray-600 mb-1">{children}</label>
+);
+
+/* ── Shared input class ── */
+const inputCls = 'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white';
+
 const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -59,75 +76,50 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
   const [formData, setFormData] = useState(getInitialFormData());
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
+    if (!isOpen) return;
     setFormData(getInitialFormData(newsItem));
     setImageFile(null);
 
     const fetchOptions = async () => {
       try {
         setLoadingOptions(true);
-        const [categoriesRes, subCategoriesRes, authorsRes] = await Promise.all([
+        const [cRes, sRes, aRes] = await Promise.all([
           fetch(CAT_API_URL),
           fetch(SUBCATEGORY_API_URL),
           fetch(AUTHOR_API_URL)
         ]);
-
-        if (!categoriesRes.ok || !subCategoriesRes.ok || !authorsRes.ok) {
-          throw new Error('Failed to load form options');
-        }
-
-        const [categoriesData, subCategoriesData, authorsData] = await Promise.all([
-          categoriesRes.json(),
-          subCategoriesRes.json(),
-          authorsRes.json()
-        ]);
-
-        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
-        setSubCategories(Array.isArray(subCategoriesData) ? subCategoriesData : []);
-        setAuthors(Array.isArray(authorsData) ? authorsData : []);
+        if (!cRes.ok || !sRes.ok || !aRes.ok) throw new Error('Failed to load form options');
+        const [cData, sData, aData] = await Promise.all([cRes.json(), sRes.json(), aRes.json()]);
+        setCategories(Array.isArray(cData) ? cData : []);
+        setSubCategories(Array.isArray(sData) ? sData : []);
+        setAuthors(Array.isArray(aData) ? aData : []);
       } catch (error) {
-        console.error('Error fetching form options:', error);
+        console.error(error);
         toast.error('Failed to load categories, subcategories, or authors');
       } finally {
         setLoadingOptions(false);
       }
     };
-
     fetchOptions();
   }, [isOpen, newsItem]);
 
   const imagePreview = useMemo(() => {
-    if (imageFile) {
-      return URL.createObjectURL(imageFile);
-    }
-
+    if (imageFile) return URL.createObjectURL(imageFile);
     return resolveMediaUrl(formData.featuredImageUrl);
   }, [formData.featuredImageUrl, imageFile]);
 
   useEffect(() => {
     return () => {
-      if (imageFile && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview);
-      }
+      if (imageFile && imagePreview.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
     };
   }, [imageFile, imagePreview]);
 
-  const updateFormData = (field, value) => {
-    setFormData((current) => ({ ...current, [field]: value }));
-  };
+  const update = (field, value) => setFormData(cur => ({ ...cur, [field]: value }));
 
-  const filteredSubCategories = subCategories.filter((item) => {
-    const parentCategoryId = item.category?._id || item.category;
-    return parentCategoryId === formData.category;
+  const filteredSubCategories = subCategories.filter(item => {
+    const parentId = item.category?._id || item.category;
+    return parentId === formData.category;
   });
-
-  const handleImageChange = (event) => {
-    const file = event.target.files?.[0] || null;
-    setImageFile(file);
-  };
 
   const handleClose = () => {
     setImageFile(null);
@@ -135,28 +127,19 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
     onClose();
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
       setUploading(true);
       let featuredImageUrl = formData.featuredImageUrl.trim();
 
       if (imageFile) {
-        const uploadFormData = new FormData();
-        uploadFormData.append('image', imageFile);
-
-        const uploadRes = await fetch(UPLOAD_URL, {
-          method: 'POST',
-          body: uploadFormData
-        });
-
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok) {
-          throw new Error(uploadData.error || 'Image upload failed');
-        }
-
-        featuredImageUrl = uploadData.filePath || featuredImageUrl;
+        const fd = new FormData();
+        fd.append('image', imageFile);
+        const res = await fetch(UPLOAD_URL, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Image upload failed');
+        featuredImageUrl = data.filePath || featuredImageUrl;
       }
 
       const payload = {
@@ -164,20 +147,14 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
         slug: formData.slug.trim(),
         excerpt: formData.hindiExcerpt.trim(),
         content: formData.hindiContent.trim(),
-        featuredImage: {
-          url: featuredImageUrl,
-          alt: formData.featuredImageAlt.trim()
-        },
+        featuredImage: { url: featuredImageUrl, alt: formData.featuredImageAlt.trim() },
         category: formData.category,
         subCategory: formData.subCategory || null,
         author: formData.author || null,
         tags: formData.tags,
         status: formData.status,
         isBreaking: formData.isBreaking,
-        seo: {
-          metaTitle: formData.metaTitle.trim(),
-          metaDescription: formData.metaDescription.trim()
-        },
+        seo: { metaTitle: formData.metaTitle.trim(), metaDescription: formData.metaDescription.trim() },
         location: formData.location.trim(),
         priority: Number(formData.priority) || 0,
         hindiTitle: formData.hindiTitle.trim(),
@@ -194,190 +171,67 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
         body: JSON.stringify(payload)
       });
       const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to save news');
-      }
+      if (!response.ok) throw new Error(responseData.error || 'Failed to save news');
 
       toast.success(newsItem ? 'News updated successfully' : 'News created successfully');
       handleClose();
       onSuccess();
     } catch (error) {
-      console.error('Error saving news:', error);
+      console.error(error);
       toast.error(error.message || 'Failed to save news');
     } finally {
       setUploading(false);
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <Popup
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={newsItem ? 'Edit News' : 'Add News'}
-      panelClassName="max-w-4xl"
-    >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Slug</label>
-            <input
-              type="text"
-              value={formData.slug}
-              onChange={(event) => updateFormData('slug', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Auto generated if left blank"
-            />
-          </div>
+    <div className="fixed inset-0 z-50 flex flex-col bg-gray-100 overflow-hidden">
 
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Priority</label>
-            <input
-              type="number"
-              min="0"
-              value={formData.priority}
-              onChange={(event) => updateFormData('priority', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+      {/* ── Top Bar ── */}
+      <header className="flex-shrink-0 flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200 shadow-sm">
+        <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+          <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 text-white text-xs font-bold">
+            {newsItem ? '✏' : '+'}
+          </span>
+          {newsItem ? 'Edit News' : 'Add News'}
+        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="px-4 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            form="news-form"
+            type="submit"
+            disabled={uploading || loadingOptions}
+            className="px-5 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400"
+          >
+            {uploading ? 'Saving…' : newsItem ? 'Update News' : 'Publish News'}
+          </button>
+        </div>
+      </header>
 
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select
-              value={formData.category}
-              onChange={(event) => {
-                const nextCategory = event.target.value;
-                setFormData((current) => ({
-                  ...current,
-                  category: nextCategory,
-                  subCategory: ''
-                }));
-              }}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-              disabled={loadingOptions}
-            >
-              <option value="">Select Category</option>
-              {categories.map((category) => (
-                <option key={category._id} value={category._id}>{category.name}</option>
-              ))}
-            </select>
-          </div>
+      {/* ── Body: Left content + Right sidebar ── */}
+      <div className="flex flex-1 overflow-hidden">
 
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Subcategory</label>
-            <select
-              value={formData.subCategory}
-              onChange={(event) => updateFormData('subCategory', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={loadingOptions || !formData.category}
-            >
-              <option value="">No Subcategory</option>
-              {filteredSubCategories.map((subCategory) => (
-                <option key={subCategory._id} value={subCategory._id}>{subCategory.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Author</label>
-            <select
-              value={formData.author}
-              onChange={(event) => updateFormData('author', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={loadingOptions}
-            >
-              <option value="">No Author</option>
-              {authors.map((author) => (
-                <option key={author._id} value={author._id}>{author.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
-              value={formData.status}
-              onChange={(event) => updateFormData('status', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Location</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(event) => updateFormData('location', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="City or region"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tags</label>
-            <input
-              type="text"
-              value={formData.tags}
-              onChange={(event) => updateFormData('tags', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Separate tags with commas"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Featured Image Upload</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Image Alt Text</label>
-            <input
-              type="text"
-              value={formData.featuredImageAlt}
-              onChange={(event) => updateFormData('featuredImageAlt', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          {imagePreview && (
-            <div className="md:col-span-2">
-              <img
-                src={imagePreview}
-                alt={formData.featuredImageAlt || formData.title || 'Preview'}
-                className="w-full h-48 object-cover rounded-lg border border-gray-200"
-              />
-            </div>
-          )}
-
-          {/* ── Article Content (Hindi) ── */}
-          <div className="md:col-span-2 border-t border-gray-200 pt-4">
-            <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 text-xs font-bold">हि</span>
-              Article Content
-              <span className="text-xs font-normal text-gray-500">(type in English — press Space to convert to Hindi)</span>
-            </h4>
+        {/* ══ LEFT — Title & Content ══ */}
+        <main className="flex-1 overflow-y-auto p-5 md:p-8">
+          <form id="news-form" onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
 
             {/* Font Picker */}
-            <div className="mb-4">
-              <p className="text-xs font-medium text-gray-500 mb-2">Choose font style:</p>
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">Font style:</p>
               <div className="flex flex-wrap gap-2">
-                {HINDI_FONTS.map((font) => (
+                {HINDI_FONTS.map(font => (
                   <button
                     key={font.name}
                     type="button"
-                    onClick={() => updateFormData('hindiFont', font.name)}
+                    onClick={() => update('hindiFont', font.name)}
                     title={font.name}
                     className={`px-3 py-1.5 rounded-full border text-sm transition-all ${
                       formData.hindiFont === font.name
@@ -391,100 +245,226 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Title <span className="text-orange-500">*</span></label>
-                <HindiInput
-                  value={formData.hindiTitle}
-                  onChange={(val) => updateFormData('hindiTitle', val)}
-                  placeholder="e.g. type 'namaskar duniya' → नमस्कार दुनिया"
-                  fontFamily={formData.hindiFont}
-                  className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Excerpt / Summary</label>
-                <HindiInput
-                  value={formData.hindiExcerpt}
-                  onChange={(val) => updateFormData('hindiExcerpt', val)}
-                  multiline
-                  rows={3}
-                  placeholder="Short summary…"
-                  fontFamily={formData.hindiFont}
-                  className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Content <span className="text-orange-500">*</span></label>
-                <HindiInput
-                  value={formData.hindiContent}
-                  onChange={(val) => updateFormData('hindiContent', val)}
-                  multiline
-                  rows={8}
-                  placeholder="Write main article content here…"
-                  fontFamily={formData.hindiFont}
-                  className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                />
-              </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Title <span className="text-orange-500">*</span>
+                <span className="ml-2 text-xs font-normal text-gray-400">(type in Hinglish → press Space to convert)</span>
+              </label>
+              <HindiInput
+                value={formData.hindiTitle}
+                onChange={val => update('hindiTitle', val)}
+                placeholder="e.g. type 'namaskar duniya' → नमस्कार दुनिया"
+                fontFamily={formData.hindiFont}
+                className="w-full px-4 py-3 text-base border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+              />
             </div>
-          </div>
 
-          <div className="md:col-span-2 border-t border-gray-200 pt-4">
-            <h4 className="text-sm font-semibold text-gray-800 mb-3">SEO</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Meta Title</label>
-                <input
-                  type="text"
-                  value={formData.metaTitle}
-                  onChange={(event) => updateFormData('metaTitle', event.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Meta Description</label>
-                <textarea
-                  value={formData.metaDescription}
-                  onChange={(event) => updateFormData('metaDescription', event.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  rows={3}
-                />
-              </div>
+            {/* Excerpt */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Excerpt / Summary</label>
+              <HindiInput
+                value={formData.hindiExcerpt}
+                onChange={val => update('hindiExcerpt', val)}
+                multiline
+                rows={3}
+                placeholder="Short summary…"
+                fontFamily={formData.hindiFont}
+                className="w-full px-4 py-3 text-sm border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+              />
             </div>
-          </div>
 
-          <div className="md:col-span-2">
-            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+            {/* Content */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Content <span className="text-orange-500">*</span>
+              </label>
+              <HindiInput
+                value={formData.hindiContent}
+                onChange={val => update('hindiContent', val)}
+                multiline
+                rows={18}
+                placeholder="Write main article content here…"
+                fontFamily={formData.hindiFont}
+                toolbar
+                className="w-full px-4 py-3 text-sm border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+              />
+            </div>
+
+          </form>
+        </main>
+
+        {/* ══ RIGHT — Sidebar ══ */}
+        <aside className="w-72 xl:w-80 flex-shrink-0 overflow-y-auto border-l border-gray-200 bg-gray-50 p-4 space-y-4">
+
+          {/* Publish */}
+          <SideSection title="Publish">
+            <div>
+              <FieldLabel>Status</FieldLabel>
+              <select
+                value={formData.status}
+                onChange={e => update('status', e.target.value)}
+                className={inputCls}
+              >
+                {STATUS_OPTIONS.map(s => (
+                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <FieldLabel>Priority</FieldLabel>
+              <input
+                type="number"
+                min="0"
+                value={formData.priority}
+                onChange={e => update('priority', e.target.value)}
+                className={inputCls}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.isBreaking}
-                onChange={(event) => updateFormData('isBreaking', event.target.checked)}
-                className="w-4 h-4 text-blue-600"
+                onChange={e => update('isBreaking', e.target.checked)}
+                className="w-4 h-4 text-red-600 rounded"
               />
-              Mark as breaking news
+              <span className="font-medium text-red-600">Breaking News</span>
             </label>
-          </div>
-        </div>
+          </SideSection>
 
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={uploading || loadingOptions}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400"
-          >
-            {uploading ? 'Saving...' : newsItem ? 'Update News' : 'Create News'}
-          </button>
-        </div>
-      </form>
-    </Popup>
+          {/* Slug */}
+          <SideSection title="URL">
+            <div>
+              <FieldLabel>Slug</FieldLabel>
+              <input
+                type="text"
+                value={formData.slug}
+                onChange={e => update('slug', e.target.value)}
+                className={inputCls}
+                placeholder="auto-generated if blank"
+              />
+            </div>
+          </SideSection>
+
+          {/* Classification */}
+          <SideSection title="Classification">
+            <div>
+              <FieldLabel>Category *</FieldLabel>
+              <select
+                value={formData.category}
+                onChange={e => setFormData(cur => ({ ...cur, category: e.target.value, subCategory: '' }))}
+                className={inputCls}
+                required
+                disabled={loadingOptions}
+              >
+                <option value="">Select Category</option>
+                {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <FieldLabel>Subcategory</FieldLabel>
+              <select
+                value={formData.subCategory}
+                onChange={e => update('subCategory', e.target.value)}
+                className={inputCls}
+                disabled={loadingOptions || !formData.category}
+              >
+                <option value="">No Subcategory</option>
+                {filteredSubCategories.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <FieldLabel>Author</FieldLabel>
+              <select
+                value={formData.author}
+                onChange={e => update('author', e.target.value)}
+                className={inputCls}
+                disabled={loadingOptions}
+              >
+                <option value="">No Author</option>
+                {authors.map(a => <option key={a._id} value={a._id}>{a.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <FieldLabel>Location</FieldLabel>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={e => update('location', e.target.value)}
+                className={inputCls}
+                placeholder="City or region"
+              />
+            </div>
+            <div>
+              <FieldLabel>Tags</FieldLabel>
+              <input
+                type="text"
+                value={formData.tags}
+                onChange={e => update('tags', e.target.value)}
+                className={inputCls}
+                placeholder="Separate with commas"
+              />
+            </div>
+          </SideSection>
+
+          {/* Featured Image */}
+          <SideSection title="Featured Image">
+            <div>
+              <FieldLabel>Upload Image</FieldLabel>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={e => setImageFile(e.target.files?.[0] || null)}
+                className="w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+            </div>
+            <div>
+              <FieldLabel>Image Alt Text</FieldLabel>
+              <input
+                type="text"
+                value={formData.featuredImageAlt}
+                onChange={e => update('featuredImageAlt', e.target.value)}
+                className={inputCls}
+                placeholder="Describe the image"
+              />
+            </div>
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt={formData.featuredImageAlt || 'Preview'}
+                className="w-full aspect-video object-cover rounded-lg border border-gray-200 mt-1"
+              />
+            )}
+          </SideSection>
+
+          {/* SEO */}
+          <SideSection title="SEO">
+            <div>
+              <FieldLabel>Meta Title</FieldLabel>
+              <input
+                type="text"
+                value={formData.metaTitle}
+                onChange={e => update('metaTitle', e.target.value)}
+                className={inputCls}
+                placeholder="Leave blank to use article title"
+              />
+            </div>
+            <div>
+              <FieldLabel>Meta Description</FieldLabel>
+              <textarea
+                value={formData.metaDescription}
+                onChange={e => update('metaDescription', e.target.value)}
+                className={`${inputCls} resize-none`}
+                rows={3}
+                placeholder="Short description for search engines"
+              />
+            </div>
+          </SideSection>
+
+        </aside>
+      </div>
+    </div>
   );
 };
 

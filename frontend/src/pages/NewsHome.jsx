@@ -13,8 +13,12 @@ const NewsHome = () => {
 
   useEffect(() => {
     return applySeoMeta({
-      title: 'New Bharat Digital',
-      description: 'ताजा खबरें, ब्रेकिंग न्यूज़ और सभी प्रमुख श्रेणियों की हिंदी समाचार अपडेट पढ़ें।'
+      title: 'ताजा हिंदी समाचार — New Bharat Digital',
+      description: 'ताजा खबरें, ब्रेकिंग न्यूज़ और सभी प्रमुख श्रेणियों की हिंदी समाचार अपडेट पढ़ें।',
+      image: `${window.location.origin}/news.webp`,
+      url: window.location.origin + '/',
+      type: 'website',
+      locale: 'hi_IN'
     });
   }, []);
 

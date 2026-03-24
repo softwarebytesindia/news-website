@@ -44,15 +44,29 @@ const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
     }
 
     const activeSection = pageData.subCategory || pageData.category || {};
+    const sectionName = activeSection.name || 'News';
+    const parentName = pageData.category?.name || '';
     const fallbackTitle = pageData.subCategory
-      ? `${pageData.subCategory.name} News | ${pageData.category?.name || 'News'} | New Bharat Digital`
-      : `${pageData.category?.name || 'News'} News | New Bharat Digital`;
+      ? `${sectionName} | ${parentName} | New Bharat Digital`
+      : `${sectionName} समाचार | New Bharat Digital`;
     const fallbackDescription = activeSection.description
-      || `Read the latest ${activeSection.name || 'news'} updates on New Bharat Digital.`;
+      || `${sectionName} की ताजा खबरें और अपडेट पढ़ें New Bharat Digital पर।`;
+
+    // Use first article's image as OG image for the category page
+    const firstArticle = Array.isArray(pageData.news) ? pageData.news[0] : null;
+    const imageUrl = firstArticle?.featuredImage?.url
+      ? (firstArticle.featuredImage.url.startsWith('http')
+          ? firstArticle.featuredImage.url
+          : `${window.location.origin}${firstArticle.featuredImage.url}`)
+      : `${window.location.origin}/news.webp`;
 
     return applySeoMeta({
       title: activeSection.seo?.metaTitle || fallbackTitle,
-      description: activeSection.seo?.metaDescription || fallbackDescription
+      description: activeSection.seo?.metaDescription || fallbackDescription,
+      image: imageUrl,
+      url: window.location.href,
+      type: 'website',
+      locale: 'hi_IN'
     });
   }, [pageData]);
 

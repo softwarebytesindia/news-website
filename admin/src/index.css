@@ -430,6 +430,60 @@
    Hindi Input Component
    ════════════════════════════════════════════════════════════ */
 
+/* ─── Formatting Toolbar (for content field) ─── */
+.hi-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px;
+  background: linear-gradient(to bottom, #fafafa, #f0f0f1);
+  border: 1px solid #d1d5db;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.hi-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Georgia', serif;
+  line-height: 1;
+  transition: all 0.1s ease;
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+
+.hi-toolbar-btn:hover {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #111827;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.hi-toolbar-btn:active {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* When toolbar is active, flatten the top corners of the textarea */
+.hindi-input-wrapper:has(.hi-toolbar) .hindi-input {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+
 .hindi-input-wrapper {
   position: relative;
   display: flex;
