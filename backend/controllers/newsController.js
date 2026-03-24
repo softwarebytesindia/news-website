@@ -177,7 +177,8 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
     priority: Math.max(0, priority),
     hindiTitle: typeof input.hindiTitle === 'string' ? input.hindiTitle.trim() : (existingNews?.hindiTitle || ''),
     hindiExcerpt: typeof input.hindiExcerpt === 'string' ? input.hindiExcerpt.trim() : (existingNews?.hindiExcerpt || ''),
-    hindiContent: typeof input.hindiContent === 'string' ? input.hindiContent.trim() : (existingNews?.hindiContent || '')
+    hindiContent: typeof input.hindiContent === 'string' ? input.hindiContent.trim() : (existingNews?.hindiContent || ''),
+    hindiFont: typeof input.hindiFont === 'string' && input.hindiFont.trim() ? input.hindiFont.trim() : (existingNews?.hindiFont || 'Hind')
   };
 };
 

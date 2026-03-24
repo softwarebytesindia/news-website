@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Popup from './Popup';
-import RichTextEditor from './RichTextEditor';
 import HindiInput from './HindiInput';
 
 const API_BASE_URL = 'http://localhost:5000';
@@ -11,6 +10,15 @@ const SUBCATEGORY_API_URL = `${API_BASE_URL}/api/subcategories`;
 const AUTHOR_API_URL = `${API_BASE_URL}/api/authors`;
 const UPLOAD_URL = `${API_BASE_URL}/api/upload/image`;
 const STATUS_OPTIONS = ['draft', 'review', 'scheduled', 'published', 'archived'];
+
+const HINDI_FONTS = [
+  { name: 'Hind',                  label: 'हिंद',        style: 'Hind' },
+  { name: 'Mukta',                 label: 'मुक्ता',      style: 'Mukta' },
+  { name: 'Noto Serif Devanagari', label: 'नोटो सेरिफ़', style: 'Noto Serif Devanagari' },
+  { name: 'Baloo 2',               label: 'बालू',        style: 'Baloo 2' },
+  { name: 'Yatra One',             label: 'यात्रा',      style: 'Yatra One' },
+  { name: 'Kalam',                 label: 'कलम',         style: 'Kalam' },
+];
 
 const getInitialFormData = (newsItem = null) => ({
   title: newsItem?.title || '',
@@ -31,7 +39,8 @@ const getInitialFormData = (newsItem = null) => ({
   priority: newsItem?.priority ?? 0,
   hindiTitle: newsItem?.hindiTitle || '',
   hindiExcerpt: newsItem?.hindiExcerpt || '',
-  hindiContent: newsItem?.hindiContent || ''
+  hindiContent: newsItem?.hindiContent || '',
+  hindiFont: newsItem?.hindiFont || 'Hind'
 });
 
 const resolveMediaUrl = (url) => {
@@ -151,10 +160,10 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
       }
 
       const payload = {
-        title: formData.title.trim(),
+        title: formData.hindiTitle.trim(),
         slug: formData.slug.trim(),
-        excerpt: formData.excerpt.trim(),
-        content: formData.content.trim(),
+        excerpt: formData.hindiExcerpt.trim(),
+        content: formData.hindiContent.trim(),
         featuredImage: {
           url: featuredImageUrl,
           alt: formData.featuredImageAlt.trim()
@@ -173,7 +182,8 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
         priority: Number(formData.priority) || 0,
         hindiTitle: formData.hindiTitle.trim(),
         hindiExcerpt: formData.hindiExcerpt.trim(),
-        hindiContent: formData.hindiContent.trim()
+        hindiContent: formData.hindiContent.trim(),
+        hindiFont: formData.hindiFont
       };
 
       const url = newsItem ? `${API_URL}/${newsItem._id}` : API_URL;
@@ -209,17 +219,6 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Title</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(event) => updateFormData('title', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-          </div>
-
           <div>
             <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Slug</label>
             <input
@@ -239,26 +238,6 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
               value={formData.priority}
               onChange={(event) => updateFormData('priority', event.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Summary / Excerpt</label>
-            <textarea
-              value={formData.excerpt}
-              onChange={(event) => updateFormData('excerpt', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows={3}
-              placeholder="Short summary for cards, previews, and snippet fallback"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Content</label>
-            <RichTextEditor
-              value={formData.content}
-              onChange={(value) => updateFormData('content', value)}
-              placeholder="Write your article content here..."
             />
           </div>
 
@@ -352,24 +331,13 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Featured Image Upload</label>
             <input
               type="file"
               accept="image/*"
               onChange={handleImageChange}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Featured Image URL</label>
-            <input
-              type="text"
-              value={formData.featuredImageUrl}
-              onChange={(event) => updateFormData('featuredImageUrl', event.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="/uploads/image.jpg or https://..."
             />
           </div>
 
@@ -393,42 +361,68 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
             </div>
           )}
 
-          {/* ── Hindi Article Content ── */}
+          {/* ── Article Content (Hindi) ── */}
           <div className="md:col-span-2 border-t border-gray-200 pt-4">
             <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 text-xs font-bold">हि</span>
-              Hindi Article Content
+              Article Content
               <span className="text-xs font-normal text-gray-500">(type in English — press Space to convert to Hindi)</span>
             </h4>
+
+            {/* Font Picker */}
+            <div className="mb-4">
+              <p className="text-xs font-medium text-gray-500 mb-2">Choose font style:</p>
+              <div className="flex flex-wrap gap-2">
+                {HINDI_FONTS.map((font) => (
+                  <button
+                    key={font.name}
+                    type="button"
+                    onClick={() => updateFormData('hindiFont', font.name)}
+                    title={font.name}
+                    className={`px-3 py-1.5 rounded-full border text-sm transition-all ${
+                      formData.hindiFont === font.name
+                        ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-300 text-orange-800'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-50'
+                    }`}
+                    style={{ fontFamily: `'${font.style}', sans-serif`, fontSize: '1rem' }}
+                  >
+                    {font.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="grid grid-cols-1 gap-4">
               <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Hindi Title</label>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Title <span className="text-orange-500">*</span></label>
                 <HindiInput
                   value={formData.hindiTitle}
                   onChange={(val) => updateFormData('hindiTitle', val)}
                   placeholder="e.g. type 'namaskar duniya' → नमस्कार दुनिया"
+                  fontFamily={formData.hindiFont}
                   className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
                 />
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Hindi Excerpt / Summary</label>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Excerpt / Summary</label>
                 <HindiInput
                   value={formData.hindiExcerpt}
                   onChange={(val) => updateFormData('hindiExcerpt', val)}
                   multiline
                   rows={3}
-                  placeholder="Short Hindi summary…"
+                  placeholder="Short summary…"
+                  fontFamily={formData.hindiFont}
                   className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
                 />
               </div>
               <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Hindi Content</label>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Content <span className="text-orange-500">*</span></label>
                 <HindiInput
                   value={formData.hindiContent}
                   onChange={(val) => updateFormData('hindiContent', val)}
                   multiline
                   rows={8}
-                  placeholder="Write main article content in Hindi here…"
+                  placeholder="Write main article content here…"
+                  fontFamily={formData.hindiFont}
                   className="w-full px-3 py-2 text-sm border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
                 />
               </div>

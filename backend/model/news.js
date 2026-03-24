@@ -100,6 +100,11 @@ const newsSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: ''
+    },
+    hindiFont: {
+      type: String,
+      trim: true,
+      default: 'Hind'
     }
   },
   {

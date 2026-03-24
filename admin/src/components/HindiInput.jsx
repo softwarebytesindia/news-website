@@ -56,6 +56,7 @@ const HindiInput = ({
   placeholder = 'Type in English (Hinglish) — press Space to convert to Hindi…',
   className = '',
   required = false,
+  fontFamily = 'Hind',
 }) => {
   const inputRef = useRef(null);
   // suggestions state: { list, wordStart, wordLength, anchorTop, anchorLeft }
@@ -186,6 +187,7 @@ const HindiInput = ({
     lang: 'hi',
     dir: 'auto',
     className: `hindi-input ${className}`,
+    style: { fontFamily: `'${fontFamily}', sans-serif` },
   };
 
   return (

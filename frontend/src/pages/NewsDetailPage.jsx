@@ -130,14 +130,18 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                     <span>{formatNewsDate(article.createdAt)}</span>
                     {article.author?.name ? <span>By {article.author.name}</span> : null}
                   </div>
-                  <h1 className="mt-4 text-xl sm:text-3xl font-bold tracking-tight text-gray-900 leading-tight">
+                  <h1
+                    className="mt-4 text-xl sm:text-3xl font-bold tracking-tight text-gray-900 leading-tight"
+                    style={article.hindiFont ? { fontFamily: `'${article.hindiFont}', sans-serif` } : undefined}
+                  >
                     {article.title}
                   </h1>
                 </div>
 
                 <div className="px-5 sm:px-8 pb-8">
-                  <div
+                <div
                     className="news-content"
+                    style={article.hindiFont ? { fontFamily: `'${article.hindiFont}', sans-serif` } : undefined}
                     dangerouslySetInnerHTML={{ __html: article.content }}
                   />
                 </div>
