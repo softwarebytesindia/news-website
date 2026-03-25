@@ -430,58 +430,162 @@
    Hindi Input Component
    ════════════════════════════════════════════════════════════ */
 
-/* ─── Formatting Toolbar (for content field) ─── */
+/* ─── Rich Editor Wrapper (toolbar + contenteditable) ─── */
+.hi-rich-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.hi-rich-wrapper:focus-within {
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+}
+
+/* ─── Formatting Toolbar ─── */
 .hi-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 2px;
-  padding: 5px 8px;
-  background: linear-gradient(to bottom, #fafafa, #f0f0f1);
-  border: 1px solid #d1d5db;
-  border-bottom: none;
-  border-radius: 8px 8px 0 0;
+  padding: 6px 10px;
+  background: linear-gradient(to bottom, #fafafa, #f3f4f6);
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .hi-toolbar-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 34px;
   height: 28px;
-  padding: 0 6px;
+  padding: 0 8px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 5px;
   background: transparent;
   color: #374151;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
-  font-family: 'Georgia', serif;
+  font-weight: 600;
+  font-family: inherit;
   line-height: 1;
-  transition: all 0.1s ease;
+  transition: all 0.12s ease;
   flex-shrink: 0;
-  letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .hi-toolbar-btn:hover {
   background: #fff;
   border-color: #d1d5db;
   color: #111827;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .hi-toolbar-btn:active {
-  background: #e5e7eb;
-  border-color: #9ca3af;
+  background: #f3f4f6;
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
 }
 
-/* When toolbar is active, flatten the top corners of the textarea */
-.hindi-input-wrapper:has(.hi-toolbar) .hindi-input {
-  border-top-left-radius: 0 !important;
-  border-top-right-radius: 0 !important;
+/* Block-format buttons (Normal, Heading 2–5) get accent colour */
+.hi-toolbar-block-btn {
+  font-family: 'Georgia', serif;
+  color: #1e3a5f;
+  letter-spacing: -0.3px;
 }
+
+.hi-toolbar-block-btn:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.hi-toolbar-hint {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 500;
+  color: #9ca3af;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  padding-left: 8px;
+  user-select: none;
+}
+
+/* ─── Contenteditable Editor Area ─── */
+.hi-rich-editor {
+  min-height: 385px;
+  padding: 20px 24px 24px;
+  outline: none;
+  font-size: 16px;
+  line-height: 1.85;
+  color: #1f2937;
+  overflow-y: auto;
+  word-break: break-word;
+  flex: 1;
+}
+
+/* Placeholder via ::before on empty editor */
+.hi-rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* ─── Visual Heading Styles inside the editor ─── */
+.hi-rich-editor h2 {
+  font-size: 1.6em;
+  font-weight: 700;
+  color: #111827;
+  margin: 0.8em 0 0.4em;
+  line-height: 1.3;
+  letter-spacing: -0.3px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #fed7aa;
+}
+
+.hi-rich-editor h3 {
+  font-size: 1.3em;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0.7em 0 0.35em;
+  line-height: 1.35;
+}
+
+.hi-rich-editor h4 {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #374151;
+  margin: 0.6em 0 0.3em;
+  line-height: 1.4;
+}
+
+.hi-rich-editor h5 {
+  font-size: 1em;
+  font-weight: 700;
+  color: #6b7280;
+  margin: 0.5em 0 0.25em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hi-rich-editor p {
+  margin: 0 0 0.75em;
+}
+
+.hi-rich-editor strong { font-weight: 700; }
+.hi-rich-editor em     { font-style: italic; }
+
+/* When wrapper contains a textarea, align badge to top */
+.hindi-input-wrapper:has(textarea) .hindi-badge {
+  top: 10px;
+  transform: none;
+}
+
 
 
 .hindi-input-wrapper {

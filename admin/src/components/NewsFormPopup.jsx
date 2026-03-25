@@ -217,11 +217,11 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
       </header>
 
       {/* ── Body: Left content + Right sidebar ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
 
         {/* ══ LEFT — Title & Content ══ */}
         <main className="flex-1 overflow-y-auto p-5 md:p-8">
-          <form id="news-form" onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
+          <form id="news-form" onSubmit={handleSubmit} className="max-w-5xl mx-auto space-y-8">
 
             {/* Font Picker */}
             <div>
@@ -257,23 +257,11 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
                 onChange={val => update('hindiTitle', val)}
                 placeholder="e.g. type 'namaskar duniya' → नमस्कार दुनिया"
                 fontFamily={formData.hindiFont}
-                className="w-full px-4 py-3 text-base border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                className="w-full px-5 py-5 text-lg border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
               />
             </div>
 
-            {/* Excerpt */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Excerpt / Summary</label>
-              <HindiInput
-                value={formData.hindiExcerpt}
-                onChange={val => update('hindiExcerpt', val)}
-                multiline
-                rows={3}
-                placeholder="Short summary…"
-                fontFamily={formData.hindiFont}
-                className="w-full px-4 py-3 text-sm border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-              />
-            </div>
+            <div className="mb-6"></div>
 
             {/* Content */}
             <div>
@@ -284,11 +272,11 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
                 value={formData.hindiContent}
                 onChange={val => update('hindiContent', val)}
                 multiline
-                rows={18}
+                rows={22}
                 placeholder="Write main article content here…"
                 fontFamily={formData.hindiFont}
                 toolbar
-                className="w-full px-4 py-3 text-sm border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                className="w-full px-5 py-5 text-base border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
               />
             </div>
 
@@ -296,7 +284,7 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
         </main>
 
         {/* ══ RIGHT — Sidebar ══ */}
-        <aside className="w-72 xl:w-80 flex-shrink-0 overflow-y-auto border-l border-gray-200 bg-gray-50 p-4 space-y-4">
+        <aside className="w-full md:w-72 xl:w-80 flex-shrink-0 overflow-y-auto border-l border-gray-200 bg-gray-50 p-4 space-y-4">
 
           {/* Publish */}
           <SideSection title="Publish">
@@ -460,6 +448,19 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
                 placeholder="Short description for search engines"
               />
             </div>
+          </SideSection>
+
+          {/* Excerpt / Summary */}
+          <SideSection title="Excerpt / Summary">
+            <HindiInput
+              value={formData.hindiExcerpt}
+              onChange={val => update('hindiExcerpt', val)}
+              multiline
+              rows={4}
+              placeholder="Short summary…"
+              fontFamily={formData.hindiFont}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            />
           </SideSection>
 
         </aside>

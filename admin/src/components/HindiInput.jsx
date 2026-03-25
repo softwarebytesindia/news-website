@@ -2,11 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * HindiInput — Hinglish → Devanagari transliteration with:
- *   1. Auto-space insertion after each converted word
- *   2. Top-3 suggestion dropdown so user can pick the correct Hindi word
- *
- * Usage: type phonetically in English, press Space → word converts + space added.
- *        A small suggestions popup appears; click any suggestion to swap the word.
+ *   • Auto-space insertion after each converted word
+ *   • Top-3 suggestion dropdown for ambiguous words
+ *   • When toolbar=true + multiline: uses contenteditable div → headings render visually
+ *   • Otherwise: plain textarea / input
  */
 
 /* ─── Fetch up to 3 suggestions from Google Input Tools ─── */
@@ -16,67 +15,209 @@ const fetchSuggestions = async (word) => {
     const url = `https://inputtools.google.com/request?text=${encodeURIComponent(word.trim())}&itc=hi-t-i0-und&num=3&cp=0&cs=1&ie=utf-8&oe=utf-8&app=diacritical`;
     const res = await fetch(url);
     const data = await res.json();
-    // Response: ["SUCCESS", [["word", ["opt1","opt2","opt3"]]]]
     if (data?.[0] === 'SUCCESS' && Array.isArray(data?.[1]?.[0]?.[1])) {
-      return data[1][0][1]; // array of suggestions
+      return data[1][0][1];
     }
-  } catch {
-    // Network failure — return empty
-  }
+  } catch { /* network failure */ }
   return [];
 };
 
-/* ─── Whitelist of Hinglish words that need a suggestion dropdown ─── */
-/**
- * These are words where the Google transliteration often picks the wrong
- * Hindi word as the top result (e.g. "mai" → "मई" but user means "मैं" or "में").
- * Only words in this set will show the suggestion popup; everything else
- * converts silently using the top suggestion.
- */
+/* ─── Words that need a suggestion dropdown (common transliteration errors) ─── */
 const SHOW_SUGGESTIONS_FOR = new Set([
-  // Pronouns / postpositions with common transliteration errors
   'mai', 'main', 'me', 'mein',
   'ha', 'hai', 'hain', 'hoon', 'hun',
   'vo', 'voh', 'wo', 'woh',
   'yeh', 'ye', 'is', 'iss',
   'un', 'unhe', 'unko', 'use', 'usse',
-  // Prepositions / particles that map to multiple words
   'ko', 'ka', 'ki', 'ke', 'se', 'ne', 'par', 'pe',
   'to', 'toh', 'bhi', 'hi', 'na', 'nahi', 'nhi',
-  // Conjunctions
   'aur', 'ya', 'lekin', 'magar', 'kyunki', 'isliye',
 ]);
 
-/* ─── Main Component ─── */
+/* ─── Toolbar definition ─── */
 const TOOLBAR_ITEMS = [
-  { label: 'Normal', tag: 'p', title: 'Normal paragraph' },
-  { label: 'H2', tag: 'h2', title: 'Heading 2' },
-  { label: 'H3', tag: 'h3', title: 'Heading 3' },
-  { label: 'H4', tag: 'h4', title: 'Heading 4' },
-  { label: 'H5', tag: 'h5', title: 'Heading 5' },
+  { label: 'Normal',     tag: 'p',      title: 'Normal text',  block: true  },
+  { label: 'Heading 2',  tag: 'h2',     title: 'Heading (H2)', block: true  },
+  { label: 'Heading 3',  tag: 'h3',     title: 'Heading (H3)', block: true  },
+  { label: 'Heading 4',  tag: 'h4',     title: 'Heading (H4)', block: true  },
+  { label: 'Heading 5',  tag: 'h5',     title: 'Heading (H5)', block: true  },
   'divider',
-  { label: '𝐁', tag: 'strong', title: 'Bold', inline: true },
-  { label: '𝘐', tag: 'em', title: 'Italic', inline: true },
+  { label: '𝐁',          tag: 'strong', title: 'Bold',         block: false },
+  { label: '𝘐',          tag: 'em',     title: 'Italic',       block: false },
+  'divider-align',
+  { label: '≡',          tag: 'left',   title: 'Align Left',    align: true },
+  { label: '⊞',          tag: 'center', title: 'Align Center',  align: true },
+  { label: '⊟',          tag: 'right',  title: 'Align Right',   align: true },
+  { label: '☰',          tag: 'justify',title: 'Justify',       align: true },
 ];
 
-const HindiInput = ({
-  value = '',
-  onChange,
-  multiline = false,
-  rows = 4,
-  placeholder = 'Type in English (Hinglish) — press Space to convert to Hindi…',
-  className = '',
-  required = false,
-  fontFamily = 'Hind',
-  toolbar = false,
-}) => {
-  const inputRef = useRef(null);
-  // suggestions state: { list, wordStart, wordLength, anchorTop, anchorLeft }
+/* ══════════════════════════════════════════════════════════════
+   RICH CONTENTEDITABLE EDITOR (used when toolbar=true)
+   ══════════════════════════════════════════════════════════════ */
+const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => {
+  const editorRef = useRef(null);
+  const isComposing = useRef(false);
+  const lastHtml = useRef(value || '');
   const [suggestions, setSuggestions] = useState(null);
-  // Track the last inserted Hindi word location so we can swap it on suggestion pick
   const lastInsertRef = useRef(null);
 
-  /* close suggestions on outside click */
+  /* Sync external value → DOM (only when it differs, avoiding cursor reset) */
+  useEffect(() => {
+    const el = editorRef.current;
+    if (!el) return;
+    if (el.innerHTML !== (value || '')) {
+      el.innerHTML = value || '';
+      lastHtml.current = value || '';
+    }
+  }, [value]);
+
+  /* ─── Read innerHTML and notify parent ─── */
+  const emitChange = useCallback(() => {
+    const el = editorRef.current;
+    if (!el) return;
+    const html = el.innerHTML;
+    if (html !== lastHtml.current) {
+      lastHtml.current = html;
+      onChange(html);
+    }
+  }, [onChange]);
+
+  /* ─── Get the current word at caret (for transliteration) ─── */
+  const getWordAtCaret = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return null;
+    const range = sel.getRangeAt(0);
+    if (!range.collapsed) return null;
+
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return null;
+
+    const text = node.textContent;
+    const offset = range.startOffset;
+    // Find word start (go back until space/newline)
+    let start = offset;
+    while (start > 0 && !/[\s\n]/.test(text[start - 1])) start--;
+    const word = text.slice(start, offset);
+    if (!word.trim()) return null;
+    return { node, text, wordStart: start, wordEnd: offset, word };
+  };
+
+  /* ─── Replace word in text node with Hindi ─── */
+  const replaceWordInNode = (node, wordStart, wordEnd, replacement, sep) => {
+    const text = node.textContent;
+    const before = text.slice(0, wordStart);
+    const after = text.slice(wordEnd);
+    node.textContent = before + replacement + sep + after;
+
+    // Move caret after replacement + sep
+    const newOffset = wordStart + replacement.length + sep.length;
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.setStart(node, newOffset);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  };
+
+  /* ─── Transliterate on Space / Enter ─── */
+  const handleKeyDown = async (e) => {
+    // Close suggestions on any other key
+    if (suggestions && e.key !== ' ' && e.key !== 'Enter' && e.key !== 'Process') {
+      setSuggestions(null);
+      lastInsertRef.current = null;
+    }
+
+    if (e.key !== ' ' && e.key !== 'Enter') return;
+    if (isComposing.current) return;
+
+    const wordInfo = getWordAtCaret();
+    if (!wordInfo) return;
+
+    const { node, wordStart, wordEnd, word } = wordInfo;
+    const sep = e.key === 'Enter' ? '\n' : ' ';
+
+    // Only for non-Devanagari words (skip already-converted Hindi)
+    if (/[\u0900-\u097F]/.test(word)) return;
+
+    e.preventDefault();
+
+    const list = await fetchSuggestions(word);
+    if (!list.length) {
+      // No conversion — just insert word + sep as-is
+      replaceWordInNode(node, wordStart, wordEnd, word, sep);
+      emitChange();
+      return;
+    }
+
+    const best = list[0];
+    replaceWordInNode(node, wordStart, wordEnd, best, sep);
+    emitChange();
+
+    // Record for suggestion swapping
+    lastInsertRef.current = { node, wordStart, wordLength: best.length, sep };
+
+    // Show dropdown only for known ambiguous words
+    if (list.length > 1 && SHOW_SUGGESTIONS_FOR.has(word.toLowerCase())) {
+      setSuggestions({ list });
+    }
+  };
+
+  /* ─── User picks a different suggestion ─── */
+  const pickSuggestion = (chosen) => {
+    const info = lastInsertRef.current;
+    setSuggestions(null);
+    lastInsertRef.current = null;
+    if (!info) return;
+
+    const { node, wordStart, wordLength, sep } = info;
+    const text = node.textContent;
+    const before = text.slice(0, wordStart);
+    const after = text.slice(wordStart + wordLength + sep.length);
+    node.textContent = before + chosen + sep + after;
+
+    const newOffset = wordStart + chosen.length + sep.length;
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.setStart(node, newOffset);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    emitChange();
+    editorRef.current?.focus();
+  };
+
+  /* ─── Apply block format (heading / paragraph) via execCommand ─── */
+  const applyBlockFormat = (tag) => {
+    editorRef.current?.focus();
+    // formatBlock wraps current block in the given tag
+    document.execCommand('formatBlock', false, tag === 'p' ? 'p' : tag);
+    emitChange();
+  };
+
+  /* ─── Apply inline format (bold / italic) ─── */
+  const applyInlineFormat = (tag) => {
+    editorRef.current?.focus();
+    if (tag === 'strong') document.execCommand('bold', false, null);
+    else if (tag === 'em') document.execCommand('italic', false, null);
+    emitChange();
+  };
+
+  /* ─── Apply alignment ─── */
+  const applyAlignment = (align) => {
+    editorRef.current?.focus();
+    document.execCommand(`justify${align}`, false, null);
+    emitChange();
+  };
+
+  /* ─── Toolbar button click ─── */
+  const handleToolbarClick = (item) => {
+    if (item.block) applyBlockFormat(item.tag);
+    else if (item.align) applyAlignment(item.tag);
+    else applyInlineFormat(item.tag);
+  };
+
+  /* Close suggestions on outside click */
   useEffect(() => {
     if (!suggestions) return;
     const close = (e) => {
@@ -89,124 +230,180 @@ const HindiInput = ({
     return () => document.removeEventListener('mousedown', close);
   }, [suggestions]);
 
-  /* ─── Compute dropdown anchor relative to the input element ─── */
-  const getAnchorStyle = useCallback(() => {
-    const el = inputRef.current;
-    if (!el) return { top: '100%', left: 0 };
-    // Position below the element; for textarea try to get cursor position
-    return { top: '100%', left: 0, marginTop: 2 };
-  }, []);
+  return (
+    <div className="hi-rich-wrapper">
+      {/* ─── Toolbar ─── */}
+      <div className="hi-toolbar">
+        {TOOLBAR_ITEMS.map((item, i) =>
+          item === 'divider' ? (
+            <span key={i} className="wp-toolbar-divider" />
+          ) : (
+            <button
+              key={item.tag}
+              type="button"
+              title={item.title}
+              className={`hi-toolbar-btn ${item.block ? 'hi-toolbar-block-btn' : ''}`}
+              onMouseDown={(e) => {
+                e.preventDefault(); // don't blur editor
+                handleToolbarClick(item);
+              }}
+            >
+              {item.label}
+            </button>
+          )
+        )}
+        <span className="hi-toolbar-hint">Space → हिंदी</span>
+      </div>
 
-  /* ─── Word conversion on Space / Enter ─── */
+      {/* ─── Contenteditable Editor ─── */}
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        className={`hi-rich-editor ${className || ''}`}
+        style={{ fontFamily: `'${fontFamily}', sans-serif` }}
+        data-placeholder={placeholder}
+        onInput={emitChange}
+        onKeyDown={handleKeyDown}
+        onCompositionStart={() => { isComposing.current = true; }}
+        onCompositionEnd={() => { isComposing.current = false; }}
+      />
+
+      {/* ─── Suggestion Dropdown ─── */}
+      {suggestions && suggestions.list.length > 1 && (
+        <div className="hi-suggestions" style={{ top: '100%', left: 0, marginTop: 2 }}>
+          <div className="hi-suggestions-label">Suggestions — click to use:</div>
+          {suggestions.list.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`hi-suggestion-item ${i === 0 ? 'hi-suggestion-active' : ''}`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                pickSuggestion(s);
+              }}
+            >
+              {i === 0 && <span className="hi-suggestion-check">✓</span>}
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ══════════════════════════════════════════════════════════════
+   PLAIN TEXTAREA / INPUT (used for title, excerpt, etc.)
+   ══════════════════════════════════════════════════════════════ */
+const HindiInput = ({
+  value = '',
+  onChange,
+  multiline = false,
+  rows = 4,
+  placeholder = 'Type in English (Hinglish) — press Space to convert to Hindi…',
+  className = '',
+  required = false,
+  fontFamily = 'Hind',
+  toolbar = false,
+}) => {
+  /* When toolbar + multiline → use rich contenteditable editor */
+  if (toolbar && multiline) {
+    return (
+      <RichEditor
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        fontFamily={fontFamily}
+        className={className}
+      />
+    );
+  }
+
+  /* ── Plain textarea/input with transliteration ── */
+  const inputRef = useRef(null);
+  const [suggestions, setSuggestions] = useState(null);
+  const lastInsertRef = useRef(null);
+  const pendingCursorRef = useRef(null);
+
+  /* Restore cursor after controlled re-render */
+  useEffect(() => {
+    if (pendingCursorRef.current !== null) {
+      const el = inputRef.current;
+      if (el) {
+        const pos = pendingCursorRef.current;
+        el.selectionStart = pos;
+        el.selectionEnd = pos;
+      }
+      pendingCursorRef.current = null;
+    }
+  }, [value]);
+
+  /* Close dropdown on outside click */
+  useEffect(() => {
+    if (!suggestions) return;
+    const close = (e) => {
+      if (!e.target.closest('.hi-suggestions')) {
+        setSuggestions(null);
+        lastInsertRef.current = null;
+      }
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [suggestions]);
+
+  const moveCursor = (pos) => {
+    pendingCursorRef.current = pos;
+    const el = inputRef.current;
+    if (el) { el.selectionStart = pos; el.selectionEnd = pos; el.focus(); }
+  };
+
   const handleKeyDown = async (e) => {
-    // Close suggestions on any key (except mouse-driven clicks handled separately)
     if (suggestions && e.key !== ' ' && e.key !== 'Enter') {
       setSuggestions(null);
       lastInsertRef.current = null;
     }
-
     if (e.key !== ' ' && e.key !== 'Enter') return;
 
     const el = e.currentTarget;
     const cursorPos = el.selectionStart;
     const text = value;
-
-    // Everything before cursor
     const beforeCursor = text.slice(0, cursorPos);
-
-    // Find start of the last word
     const lastBreak = Math.max(beforeCursor.lastIndexOf(' '), beforeCursor.lastIndexOf('\n'));
     const wordStart = lastBreak + 1;
     const rawWord = beforeCursor.slice(wordStart);
+    if (!rawWord.trim()) return;
 
-    if (!rawWord.trim()) return; // just whitespace, let default happen
-
-    // Prevent the space/enter from being natively added — we'll add it ourselves
     e.preventDefault();
 
-    // Fetch suggestions
-    const suggestions_list = await fetchSuggestions(rawWord);
-    if (!suggestions_list.length) {
-      // No result — just insert the raw word + separator
-      const sep = e.key === 'Enter' ? '\n' : ' ';
+    const list = await fetchSuggestions(rawWord);
+    const sep = e.key === 'Enter' ? '\n' : ' ';
+
+    if (!list.length) {
       const newText = text.slice(0, wordStart) + rawWord + sep + text.slice(cursorPos);
       onChange(newText);
       moveCursor(wordStart + rawWord.length + 1);
       return;
     }
 
-    const best = suggestions_list[0];
-    const sep = e.key === 'Enter' ? '\n' : ' ';
-
-    // Insert first suggestion + separator
+    const best = list[0];
     const newText = text.slice(0, wordStart) + best + sep + text.slice(cursorPos);
     onChange(newText);
+    moveCursor(wordStart + best.length + 1);
 
-    const newCursor = wordStart + best.length + 1;
-    moveCursor(newCursor);
-
-    // Record what was inserted so we can swap on suggestion pick
     lastInsertRef.current = { wordStart, wordLength: best.length, sep };
-
-    // Show suggestion dropdown only for known ambiguous words (whitelist)
-    if (suggestions_list.length > 1 && SHOW_SUGGESTIONS_FOR.has(rawWord.toLowerCase())) {
-      setSuggestions({ list: suggestions_list, ...getAnchorStyle() });
+    if (list.length > 1 && SHOW_SUGGESTIONS_FOR.has(rawWord.toLowerCase())) {
+      setSuggestions({ list, top: '100%', left: 0, marginTop: 2 });
     }
   };
 
-  const moveCursor = (pos) => {
-    setTimeout(() => {
-      const el = inputRef.current;
-      if (!el) return;
-      el.selectionStart = pos;
-      el.selectionEnd = pos;
-      el.focus();
-    }, 0);
-  };
-
-  /* ─── Wrap selection or insert HTML tag at cursor ─── */
-  const wrapTag = (tag, inline = false) => {
-    const el = inputRef.current;
-    if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const selected = value.slice(start, end).trim();
-
-    let inserted;
-    if (selected) {
-      inserted = `<${tag}>${selected}</${tag}>`;
-    } else if (inline) {
-      inserted = `<${tag}></${tag}>`;
-    } else {
-      // Block element — wrap on its own line
-      const before = value.slice(0, start);
-      const needNewline = before.length > 0 && !before.endsWith('\n');
-      inserted = (needNewline ? '\n' : '') + `<${tag}></${tag}>\n`;
-    }
-
-    const newText = value.slice(0, start) + inserted + value.slice(end);
-    onChange(newText);
-    // Place cursor inside the closing tag
-    const closingLen = `</${tag}>`.length + (inline || selected ? 0 : 1);
-    moveCursor(start + inserted.length - closingLen);
-  };
-
-  /* ─── User picks a different suggestion ─── */
   const pickSuggestion = (chosen) => {
     const info = lastInsertRef.current;
     setSuggestions(null);
     lastInsertRef.current = null;
-
     if (!info) return;
     const { wordStart, wordLength, sep } = info;
-
-    // Replace the previously inserted word with the chosen one
-    const newText =
-      value.slice(0, wordStart) +
-      chosen +
-      sep +
-      value.slice(wordStart + wordLength + sep.length);
-
+    const newText = value.slice(0, wordStart) + chosen + sep + value.slice(wordStart + wordLength + sep.length);
     onChange(newText);
     moveCursor(wordStart + chosen.length + 1);
     inputRef.current?.focus();
@@ -215,12 +412,7 @@ const HindiInput = ({
   const sharedProps = {
     ref: inputRef,
     value,
-    onChange: (e) => {
-      // Any manual edit closes suggestions
-      setSuggestions(null);
-      lastInsertRef.current = null;
-      onChange(e.target.value);
-    },
+    onChange: (e) => { setSuggestions(null); lastInsertRef.current = null; onChange(e.target.value); },
     onKeyDown: handleKeyDown,
     placeholder,
     required,
@@ -231,61 +423,16 @@ const HindiInput = ({
   };
 
   return (
-    <div className="hindi-input-wrapper" style={toolbar ? { flexDirection: 'column', alignItems: 'stretch' } : {}}>
-      {/* ─── Formatting Toolbar ─── */}
-      {toolbar && multiline && (
-        <div className="hi-toolbar">
-          {TOOLBAR_ITEMS.map((item, i) =>
-            item === 'divider' ? (
-              <span key={i} className="wp-toolbar-divider" />
-            ) : (
-              <button
-                key={item.tag}
-                type="button"
-                title={item.title}
-                className="hi-toolbar-btn"
-                onMouseDown={(e) => {
-                  e.preventDefault(); // don't blur textarea
-                  wrapTag(item.tag, item.inline);
-                }}
-              >
-                {item.label}
-              </button>
-            )
-          )}
-        </div>
-      )}
-
-      <span
-        className="hindi-badge"
-        title="Hindi mode — type in English, press Space to convert"
-        style={toolbar && multiline ? { top: '42px' } : {}}
-      >
-        हि
-      </span>
-
-      {multiline ? (
-        <textarea {...sharedProps} rows={rows} />
-      ) : (
-        <input type="text" {...sharedProps} />
-      )}
-
-      {/* ─── Suggestion Dropdown ─── */}
+    <div className="hindi-input-wrapper" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+      <span className="hindi-badge" title="Hindi mode — type in English, press Space to convert">हि</span>
+      {multiline ? <textarea {...sharedProps} rows={rows} /> : <input type="text" {...sharedProps} />}
       {suggestions && suggestions.list.length > 1 && (
-        <div
-          className="hi-suggestions"
-          style={{ top: suggestions.top, left: suggestions.left, marginTop: suggestions.marginTop }}
-        >
+        <div className="hi-suggestions" style={{ top: suggestions.top, left: suggestions.left, marginTop: suggestions.marginTop }}>
           <div className="hi-suggestions-label">Suggestions — click to use:</div>
           {suggestions.list.map((s, i) => (
-            <button
-              key={i}
-              type="button"
+            <button key={i} type="button"
               className={`hi-suggestion-item ${i === 0 ? 'hi-suggestion-active' : ''}`}
-              onMouseDown={(e) => {
-                e.preventDefault(); // prevent blur
-                pickSuggestion(s);
-              }}
+              onMouseDown={(e) => { e.preventDefault(); pickSuggestion(s); }}
             >
               {i === 0 && <span className="hi-suggestion-check">✓</span>}
               {s}

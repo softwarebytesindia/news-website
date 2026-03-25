@@ -46,6 +46,7 @@ const ToolbarButton = ({ icon, title, isActive, onClick, disabled, className = '
   <button
     type="button"
     title={title}
+    onMouseDown={(e) => e.preventDefault()}
     onClick={onClick}
     disabled={disabled}
     className={`wp-toolbar-btn ${isActive ? 'active' : ''} ${className}`}
@@ -142,18 +143,21 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your content her
   const [sourceHtml, setSourceHtml] = useState('');
   const [activeFormats, setActiveFormats] = useState({});
   const editorWrapRef = useRef(null);
+  // Persist the last known cursor/selection so toolbar clicks can restore it
+  const lastSelectionRef = useRef(null);
 
   const getEditor = useCallback(() => {
     return quillRef.current?.getEditor?.();
   }, []);
 
   /* ─── Format Detection on Selection Change ─── */
-  const handleSelectionChange = useCallback(() => {
+  const handleSelectionChange = useCallback((range) => {
     const editor = getEditor();
     if (!editor) return;
-    const range = editor.getSelection();
-    if (range) {
-      const formats = editor.getFormat(range);
+    const sel = range !== undefined ? range : editor.getSelection();
+    if (sel) {
+      lastSelectionRef.current = sel;
+      const formats = editor.getFormat(sel);
       setActiveFormats(formats);
     }
   }, [getEditor]);
@@ -171,9 +175,22 @@ const RichTextEditor = ({ value, onChange, placeholder = 'Write your content her
   const setFormat = useCallback((format, val) => {
     const editor = getEditor();
     if (!editor) return;
+    // Restore saved selection so cursor stays in place after toolbar click
+    const savedRange = lastSelectionRef.current;
     editor.focus();
+    if (savedRange) {
+      editor.setSelection(savedRange.index, savedRange.length, 'silent');
+    }
     editor.format(format, val || false);
-    setTimeout(handleSelectionChange, 0);
+    // After formatting, make sure selection is still at saved position
+    if (savedRange) {
+      requestAnimationFrame(() => {
+        editor.setSelection(savedRange.index, savedRange.length, 'silent');
+        handleSelectionChange();
+      });
+    } else {
+      setTimeout(handleSelectionChange, 0);
+    }
   }, [getEditor, handleSelectionChange]);
 
   const insertEmbed = useCallback((type, val) => {
