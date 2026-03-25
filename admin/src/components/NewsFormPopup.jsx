@@ -37,7 +37,6 @@ const getInitialFormData = (newsItem = null) => ({
   location: newsItem?.location || '',
   priority: newsItem?.priority ?? 0,
   hindiTitle: newsItem?.hindiTitle || '',
-  hindiExcerpt: newsItem?.hindiExcerpt || '',
   hindiContent: newsItem?.hindiContent || '',
   hindiFont: newsItem?.hindiFont || 'Hind'
 });
@@ -145,7 +144,6 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
       const payload = {
         title: formData.hindiTitle.trim(),
         slug: formData.slug.trim(),
-        excerpt: formData.hindiExcerpt.trim(),
         content: formData.hindiContent.trim(),
         featuredImage: { url: featuredImageUrl, alt: formData.featuredImageAlt.trim() },
         category: formData.category,
@@ -158,7 +156,6 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
         location: formData.location.trim(),
         priority: Number(formData.priority) || 0,
         hindiTitle: formData.hindiTitle.trim(),
-        hindiExcerpt: formData.hindiExcerpt.trim(),
         hindiContent: formData.hindiContent.trim(),
         hindiFont: formData.hindiFont
       };
@@ -187,10 +184,11 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-gray-100 overflow-hidden">
+    /* Root: scrollable on mobile, fixed+flex on desktop */
+    <div className="fixed inset-0 z-50 flex flex-col bg-gray-100 overflow-y-auto md:overflow-hidden">
 
       {/* ── Top Bar ── */}
-      <header className="flex-shrink-0 flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200 shadow-sm">
+      <header className="flex-shrink-0 flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
         <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
           <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 text-white text-xs font-bold">
             {newsItem ? '✏' : '+'}
@@ -216,14 +214,14 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
         </div>
       </header>
 
-      {/* ── Body: Left content + Right sidebar ── */}
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+      {/* ── Body ── */}
+      <div className="flex flex-col md:flex-row md:flex-1 md:overflow-hidden">
 
-        {/* ══ LEFT — Title & Content ══ */}
-        <main className="flex-1 overflow-y-auto p-5 md:p-8">
+        {/* ══ LEFT — Main content area ══ */}
+        <main className="md:flex-1 md:overflow-y-auto p-5 md:p-8">
           <form id="news-form" onSubmit={handleSubmit} className="max-w-5xl mx-auto space-y-8">
 
-            {/* Font Picker */}
+            {/* 1. Font Picker */}
             <div>
               <p className="text-xs font-medium text-gray-500 mb-2">Font style:</p>
               <div className="flex flex-wrap gap-2">
@@ -246,7 +244,7 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
               </div>
             </div>
 
-            {/* Title */}
+            {/* 2. Title */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Title <span className="text-orange-500">*</span>
@@ -261,9 +259,9 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
               />
             </div>
 
-            <div className="mb-6"></div>
 
-            {/* Content */}
+
+            {/* 4. Content */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Content <span className="text-orange-500">*</span>
@@ -272,7 +270,7 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
                 value={formData.hindiContent}
                 onChange={val => update('hindiContent', val)}
                 multiline
-                rows={22}
+                rows={24}
                 placeholder="Write main article content here…"
                 fontFamily={formData.hindiFont}
                 toolbar
@@ -280,11 +278,176 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
               />
             </div>
 
+            {/* 5. Mobile sidebar sections — shown below Content on mobile only */}
+            <div className="md:hidden space-y-4">
+
+              <SideSection title="Publish">
+                <div>
+                  <FieldLabel>Status</FieldLabel>
+                  <select
+                    value={formData.status}
+                    onChange={e => update('status', e.target.value)}
+                    className={inputCls}
+                  >
+                    {STATUS_OPTIONS.map(s => (
+                      <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>Priority</FieldLabel>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.priority}
+                    onChange={e => update('priority', e.target.value)}
+                    className={inputCls}
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isBreaking}
+                    onChange={e => update('isBreaking', e.target.checked)}
+                    className="w-4 h-4 text-red-600 rounded"
+                  />
+                  <span className="font-medium text-red-600">Breaking News</span>
+                </label>
+              </SideSection>
+
+              <SideSection title="URL">
+                <div>
+                  <FieldLabel>Slug</FieldLabel>
+                  <input
+                    type="text"
+                    value={formData.slug}
+                    onChange={e => update('slug', e.target.value)}
+                    className={inputCls}
+                    placeholder="auto-generated if blank"
+                  />
+                </div>
+              </SideSection>
+
+              <SideSection title="Classification">
+                <div>
+                  <FieldLabel>Category *</FieldLabel>
+                  <select
+                    value={formData.category}
+                    onChange={e => setFormData(cur => ({ ...cur, category: e.target.value, subCategory: '' }))}
+                    className={inputCls}
+                    required
+                    disabled={loadingOptions}
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>Subcategory</FieldLabel>
+                  <select
+                    value={formData.subCategory}
+                    onChange={e => update('subCategory', e.target.value)}
+                    className={inputCls}
+                    disabled={loadingOptions || !formData.category}
+                  >
+                    <option value="">No Subcategory</option>
+                    {filteredSubCategories.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>Author</FieldLabel>
+                  <select
+                    value={formData.author}
+                    onChange={e => update('author', e.target.value)}
+                    className={inputCls}
+                    disabled={loadingOptions}
+                  >
+                    <option value="">No Author</option>
+                    {authors.map(a => <option key={a._id} value={a._id}>{a.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>Location</FieldLabel>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={e => update('location', e.target.value)}
+                    className={inputCls}
+                    placeholder="City or region"
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Tags</FieldLabel>
+                  <input
+                    type="text"
+                    value={formData.tags}
+                    onChange={e => update('tags', e.target.value)}
+                    className={inputCls}
+                    placeholder="Separate with commas"
+                  />
+                </div>
+              </SideSection>
+
+              <SideSection title="Featured Image">
+                <div>
+                  <FieldLabel>Upload Image</FieldLabel>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => setImageFile(e.target.files?.[0] || null)}
+                    className="w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Image Alt Text</FieldLabel>
+                  <input
+                    type="text"
+                    value={formData.featuredImageAlt}
+                    onChange={e => update('featuredImageAlt', e.target.value)}
+                    className={inputCls}
+                    placeholder="Describe the image"
+                  />
+                </div>
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt={formData.featuredImageAlt || 'Preview'}
+                    className="w-full aspect-video object-cover rounded-lg border border-gray-200 mt-1"
+                  />
+                )}
+              </SideSection>
+
+              <SideSection title="SEO">
+                <div>
+                  <FieldLabel>Meta Title</FieldLabel>
+                  <input
+                    type="text"
+                    value={formData.metaTitle}
+                    onChange={e => update('metaTitle', e.target.value)}
+                    className={inputCls}
+                    placeholder="Leave blank to use article title"
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Meta Description</FieldLabel>
+                  <textarea
+                    value={formData.metaDescription}
+                    onChange={e => update('metaDescription', e.target.value)}
+                    className={`${inputCls} resize-none`}
+                    rows={3}
+                    placeholder="Short description for search engines"
+                  />
+                </div>
+              </SideSection>
+
+            </div>
+            {/* end mobile sidebar sections */}
+
           </form>
         </main>
 
-        {/* ══ RIGHT — Sidebar ══ */}
-        <aside className="w-full md:w-72 xl:w-80 flex-shrink-0 overflow-y-auto border-l border-gray-200 bg-gray-50 p-4 space-y-4">
+        {/* ══ RIGHT — Sidebar (desktop only) ══ */}
+        <aside className="hidden md:block w-72 xl:w-80 flex-shrink-0 overflow-y-auto border-l border-gray-200 bg-gray-50 p-4 space-y-4">
 
           {/* Publish */}
           <SideSection title="Publish">
@@ -450,18 +613,7 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
             </div>
           </SideSection>
 
-          {/* Excerpt / Summary */}
-          <SideSection title="Excerpt / Summary">
-            <HindiInput
-              value={formData.hindiExcerpt}
-              onChange={val => update('hindiExcerpt', val)}
-              multiline
-              rows={4}
-              placeholder="Short summary…"
-              fontFamily={formData.hindiFont}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-            />
-          </SideSection>
+
 
         </aside>
       </div>

@@ -137,9 +137,9 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
   const requestedMetaDescription = typeof seoInput.metaDescription === 'string'
     ? seoInput.metaDescription.trim()
     : '';
-  const excerpt = typeof input.excerpt === 'string' && input.excerpt.trim()
-    ? input.excerpt.trim()
-    : (existingNews?.excerpt || requestedMetaDescription || '');
+  // Auto-generate excerpt from content (strip HTML, take first 200 chars)
+  const stripHtml = (html = '') => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const excerpt = stripHtml(content).slice(0, 200);
 
   const rawStatus = typeof input.status === 'string' ? input.status : existingNews?.status;
   const status = VALID_STATUSES.includes(rawStatus)
@@ -176,7 +176,7 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
     location: typeof input.location === 'string' ? input.location.trim() : (existingNews?.location || ''),
     priority: Math.max(0, priority),
     hindiTitle: typeof input.hindiTitle === 'string' ? input.hindiTitle.trim() : (existingNews?.hindiTitle || ''),
-    hindiExcerpt: typeof input.hindiExcerpt === 'string' ? input.hindiExcerpt.trim() : (existingNews?.hindiExcerpt || ''),
+    hindiExcerpt: stripHtml(typeof input.hindiContent === 'string' ? input.hindiContent.trim() : (existingNews?.hindiContent || '')).slice(0, 200),
     hindiContent: typeof input.hindiContent === 'string' ? input.hindiContent.trim() : (existingNews?.hindiContent || ''),
     hindiFont: typeof input.hindiFont === 'string' && input.hindiFont.trim() ? input.hindiFont.trim() : (existingNews?.hindiFont || 'Hind')
   };

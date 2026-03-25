@@ -528,6 +528,12 @@
   flex: 1;
 }
 
+@media (min-width: 768px) {
+  .hi-rich-editor {
+    min-height: 462px;
+  }
+}
+
 /* Placeholder via ::before on empty editor */
 .hi-rich-editor:empty::before {
   content: attr(data-placeholder);
