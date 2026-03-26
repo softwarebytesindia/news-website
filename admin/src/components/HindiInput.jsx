@@ -136,8 +136,14 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
     const { node, wordStart, wordEnd, word } = wordInfo;
     const sep = e.key === 'Enter' ? '\n' : ' ';
 
-    // Only for non-Devanagari words (skip already-converted Hindi)
-    if (/[\u0900-\u097F]/.test(word)) return;
+    const isHindiWord = /[\u0900-\u097F]/.test(word);
+    
+    if (isHindiWord) {
+      e.preventDefault();
+      replaceWordInNode(node, wordStart, wordEnd, word, sep);
+      emitChange();
+      return;
+    }
 
     e.preventDefault();
 
@@ -374,10 +380,20 @@ const HindiInput = ({
     const rawWord = beforeCursor.slice(wordStart);
     if (!rawWord.trim()) return;
 
+    const isHindiWord = /[\u0900-\u097F]/.test(rawWord);
+    const sep = e.key === 'Enter' ? '\n' : ' ';
+
+    if (isHindiWord) {
+      e.preventDefault();
+      const newText = text.slice(0, wordStart) + rawWord + sep + text.slice(cursorPos);
+      onChange(newText);
+      moveCursor(wordStart + rawWord.length + 1);
+      return;
+    }
+
     e.preventDefault();
 
     const list = await fetchSuggestions(rawWord);
-    const sep = e.key === 'Enter' ? '\n' : ' ';
 
     if (!list.length) {
       const newText = text.slice(0, wordStart) + rawWord + sep + text.slice(cursorPos);

@@ -543,6 +543,17 @@
 }
 
 /* ─── Visual Heading Styles inside the editor ─── */
+.hi-rich-editor h1 {
+  font-size: 1.8em;
+  font-weight: 700;
+  color: #111827;
+  margin: 0.9em 0 0.45em;
+  line-height: 1.3;
+  letter-spacing: -0.3px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #fed7aa;
+}
+
 .hi-rich-editor h2 {
   font-size: 1.6em;
   font-weight: 700;
