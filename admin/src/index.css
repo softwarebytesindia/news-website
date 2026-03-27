@@ -715,4 +715,261 @@
   color: #e65100;
   flex-shrink: 0;
 }
+
+/* ════════════════════════════════════════════════════════════
+   Inline Image Insertion — Editor Styles
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── Insert Image Toolbar Button ─── */
+.hi-img-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  height: 28px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-color: #bfdbfe !important;
+  color: #1d4ed8;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.hi-img-btn:hover {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  border-color: #93c5fd !important;
+  color: #1e40af;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+  transform: translateY(-1px);
+}
+
+.hi-img-btn svg {
+  flex-shrink: 0;
+}
+
+/* ─── Drag-over Highlight on Editor ─── */
+.hi-rich-editor.drag-over {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.25);
+  outline: 2px dashed #3b82f6;
+  outline-offset: -4px;
+}
+
+/* ─── Drop Hint Overlay ─── */
+.hi-drag-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(239, 246, 255, 0.88);
+  border-radius: 0 0 12px 12px;
+  color: #1d4ed8;
+  font-size: 15px;
+  font-weight: 600;
+  pointer-events: none;
+  animation: hi-fade-in 0.12s ease;
+}
+
+.hi-drag-hint svg {
+  width: 36px;
+  height: 36px;
+  opacity: 0.7;
+}
+
+/* ─── Uploading Overlay ─── */
+.hi-uploading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(3px);
+  border-radius: 0 0 12px 12px;
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hi-uploading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #bfdbfe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: hi-spin 0.7s linear infinite;
+}
+
+@keyframes hi-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes hi-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── Floating Image Alignment Toolbar ─── */
+.hi-img-align-bar {
+  display: none; /* shown via JS only when a figure is .selected */
+  position: absolute;
+  z-index: 50;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  border-radius: 6px;
+  padding: 4px;
+  gap: 2px;
+  flex-direction: row;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  pointer-events: auto;
+}
+
+/* Show alignment bar when a figure is selected inside this wrapper */
+.hi-rich-wrapper:has(figure.content-img-wrap.selected) .hi-img-align-bar {
+  display: flex;
+}
+
+.hi-img-align-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.hi-img-align-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+/* ─── Figure / Image inside Editor ─── */
+.hi-rich-editor figure.content-img-wrap {
+  display: block;
+  margin: 1.4em 0;
+  padding: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: outline 0.12s ease;
+  position: relative;
+  text-align: center; /* default: center */
+}
+
+/* Alignment variants via data-align */
+.hi-rich-editor figure.content-img-wrap[data-align="left"] {
+  text-align: left;
+  float: left;
+  margin: 0.6em 1.4em 0.8em 0;
+  max-width: 50%;
+}
+
+.hi-rich-editor figure.content-img-wrap[data-align="right"] {
+  text-align: right;
+  float: right;
+  margin: 0.6em 0 0.8em 1.4em;
+  max-width: 50%;
+}
+
+.hi-rich-editor figure.content-img-wrap[data-align="center"] {
+  float: none;
+  clear: both;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Selected state */
+.hi-rich-editor figure.content-img-wrap.selected {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ─── Image inside figure ─── */
+.hi-rich-editor figure.content-img-wrap img.content-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 0 auto;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+}
+
+.hi-rich-editor figure.content-img-wrap[data-align="left"] img.content-img,
+.hi-rich-editor figure.content-img-wrap[data-align="right"] img.content-img {
+  margin: 0;
+  width: 100%;
+}
+
+/* ─── Caption ─── */
+.hi-rich-editor figure.content-img-wrap figcaption.content-img-caption {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-style: italic;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.5;
+  outline: none;
+  min-height: 1.4em;
+  cursor: text;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 0.1s ease;
+}
+
+.hi-rich-editor figure.content-img-wrap figcaption.content-img-caption:focus {
+  background: #f9fafb;
+  color: #374151;
+}
+
+/* Caption placeholder */
+.hi-rich-editor figure.content-img-wrap figcaption.content-img-caption:empty::before {
+  content: attr(data-placeholder);
+  color: #d1d5db;
+  pointer-events: none;
+}
+
+/* Clear floats after float-aligned figures */
+.hi-rich-editor figure.content-img-wrap[data-align="left"] + *,
+.hi-rich-editor figure.content-img-wrap[data-align="right"] + * {
+  display: flow-root;
+}
+
+/* ─── Mobile Adjustments ─── */
+@media (max-width: 640px) {
+  .hi-rich-editor figure.content-img-wrap[data-align="left"],
+  .hi-rich-editor figure.content-img-wrap[data-align="right"] {
+    float: none;
+    max-width: 100%;
+    margin: 1.2em 0;
+    text-align: center;
+  }
+
+  .hi-img-btn span {
+    display: none; /* icon-only on very small screens */
+  }
+
+  .hi-img-btn {
+    padding: 0 8px;
+  }
+}
 

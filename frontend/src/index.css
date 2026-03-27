@@ -68,10 +68,92 @@
   color: #dc2626;
 }
 
+/* ─── Inline images (bare <img> from older content) ─── */
 .news-content img {
-  border-radius: 1rem;
-  margin: 1.25rem 0;
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1.25rem auto;
 }
+
+/* ─── Figure wrapper (from editor image insertion) ─── */
+.news-content figure.content-img-wrap {
+  display: block;
+  margin: 1.75rem 0;
+  padding: 0;
+}
+
+/* Center (default) */
+.news-content figure.content-img-wrap[data-align="center"],
+.news-content figure.content-img-wrap:not([data-align]) {
+  text-align: center;
+  float: none;
+  clear: both;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Left-float */
+.news-content figure.content-img-wrap[data-align="left"] {
+  float: left;
+  margin: 0.5rem 1.5rem 1rem 0;
+  max-width: 48%;
+  text-align: left;
+}
+
+/* Right-float */
+.news-content figure.content-img-wrap[data-align="right"] {
+  float: right;
+  margin: 0.5rem 0 1rem 1.5rem;
+  max-width: 48%;
+  text-align: right;
+}
+
+/* Clear flow after any float-aligned figure */
+.news-content figure.content-img-wrap[data-align="left"] + *,
+.news-content figure.content-img-wrap[data-align="right"] + * {
+  display: flow-root;
+}
+
+/* ─── Image inside figure ─── */
+.news-content figure.content-img-wrap img.content-img {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  margin: 0;
+}
+
+/* ─── Caption ─── */
+.news-content figure.content-img-wrap figcaption.content-img-caption {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #9ca3af;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Empty caption → hide on frontend */
+.news-content figure.content-img-wrap figcaption.content-img-caption:empty {
+  display: none;
+}
+
+/* ─── Mobile: collapse floats ─── */
+@media (max-width: 640px) {
+  .news-content figure.content-img-wrap[data-align="left"],
+  .news-content figure.content-img-wrap[data-align="right"] {
+    float: none;
+    max-width: 100%;
+    margin: 1.25rem 0;
+    text-align: center;
+  }
+}
+
 
 .breadcrumb-scroll {
   -ms-overflow-style: none;

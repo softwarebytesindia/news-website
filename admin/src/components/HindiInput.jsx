@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { API_BASE_URL, UPLOAD_IMAGE_API_URL } from '../utils/api';
 
 /**
  * HindiInput — Hinglish → Devanagari transliteration with:
  *   • Auto-space insertion after each converted word
  *   • Top-3 suggestion dropdown for ambiguous words
- *   • When toolbar=true + multiline: uses contenteditable div → headings render visually
+ *   • When toolbar=true + multiline: contenteditable div with IMAGE INSERTION
  *   • Otherwise: plain textarea / input
  */
 
@@ -22,7 +23,7 @@ const fetchSuggestions = async (word) => {
   return [];
 };
 
-/* ─── Words that need a suggestion dropdown (common transliteration errors) ─── */
+/* ─── Words that need a suggestion dropdown ─── */
 const SHOW_SUGGESTIONS_FOR = new Set([
   'mai', 'main', 'me', 'mein',
   'ha', 'hai', 'hain', 'hoon', 'hun',
@@ -51,17 +52,50 @@ const TOOLBAR_ITEMS = [
   { label: '☰',          tag: 'justify',title: 'Justify',       align: true },
 ];
 
+/* ─── SVG Icons ─── */
+const ImgIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+    <circle cx="8.5" cy="8.5" r="1.5"/>
+    <polyline points="21 15 16 10 5 21"/>
+  </svg>
+);
+
+const AlignLeftIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+const AlignCenterIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+const AlignRightIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+
 /* ══════════════════════════════════════════════════════════════
    RICH CONTENTEDITABLE EDITOR (used when toolbar=true)
    ══════════════════════════════════════════════════════════════ */
 const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => {
   const editorRef = useRef(null);
+  const fileInputRef = useRef(null);
   const isComposing = useRef(false);
   const lastHtml = useRef(value || '');
+  const savedRangeRef = useRef(null);   // saved caret before toolbar click
   const [suggestions, setSuggestions] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const lastInsertRef = useRef(null);
 
-  /* Sync external value → DOM (only when it differs, avoiding cursor reset) */
+  /* Sync external value → DOM */
   useEffect(() => {
     const el = editorRef.current;
     if (!el) return;
@@ -82,6 +116,188 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
     }
   }, [onChange]);
 
+  /* ─── Save caret position ─── */
+  const saveSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+    }
+  }, []);
+
+  /* ─── Restore caret position ─── */
+  const restoreSelection = useCallback(() => {
+    const range = savedRangeRef.current;
+    if (!range) return;
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }, []);
+
+  /* ─── Upload image file to backend ─── */
+  const uploadImageFile = useCallback(async (file) => {
+    if (!file || !file.type.startsWith('image/')) return null;
+    const fd = new FormData();
+    fd.append('image', file);
+    try {
+      const res = await fetch(UPLOAD_IMAGE_API_URL, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      return data.filePath; // e.g. /uploads/filename.avif
+    } catch (err) {
+      console.error('Image upload error:', err);
+      return null;
+    }
+  }, []);
+
+  /* ─── Insert <figure> at cursor ─── */
+  const insertFigureAtCursor = useCallback((src, altText = '') => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    // Build a unique id for the figure so we can find it after insertion
+    const figId = `fig-${Date.now()}`;
+
+    // Resolve full URL for preview
+    const fullSrc = src.startsWith('http') ? src : `${API_BASE_URL}${src}`;
+
+    const figHtml =
+      `<figure class="content-img-wrap" id="${figId}" data-align="center">` +
+        `<img class="content-img" src="${fullSrc}" alt="${altText}" />` +
+        `<figcaption class="content-img-caption" contenteditable="true" data-placeholder="Add a caption…"></figcaption>` +
+      `</figure>` +
+      `<p><br></p>`;
+
+    editor.focus();
+    restoreSelection();
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+
+      // Insert a paragraph break before if range is mid-paragraph
+      const div = document.createElement('div');
+      div.innerHTML = figHtml;
+      const frag = document.createDocumentFragment();
+      while (div.firstChild) frag.appendChild(div.firstChild);
+      range.insertNode(frag);
+
+      // Move cursor after figure
+      const insertedFig = editor.querySelector(`#${figId}`);
+      if (insertedFig) {
+        insertedFig.removeAttribute('id');
+        const afterFig = insertedFig.nextElementSibling;
+        if (afterFig) {
+          const newRange = document.createRange();
+          newRange.setStart(afterFig, 0);
+          newRange.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(newRange);
+        }
+      }
+    } else {
+      // Fallback: append at end
+      editor.innerHTML += figHtml;
+    }
+
+    emitChange();
+  }, [restoreSelection, emitChange]);
+
+  /* ─── Handle file: upload then insert ─── */
+  const handleImageFile = useCallback(async (file) => {
+    if (!file) return;
+    setUploading(true);
+    saveSelection();
+    const filePath = await uploadImageFile(file);
+    setUploading(false);
+    if (filePath) {
+      insertFigureAtCursor(filePath, file.name.replace(/\.[^.]+$/, ''));
+    } else {
+      alert('Image upload failed. Please try again.');
+    }
+  }, [uploadImageFile, insertFigureAtCursor, saveSelection]);
+
+  /* ─── Toolbar: image button ─── */
+  const handleInsertImageClick = useCallback(() => {
+    saveSelection();
+    fileInputRef.current?.click();
+  }, [saveSelection]);
+
+  /* ─── File input change ─── */
+  const handleFileChange = useCallback((e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) handleImageFile(file);
+  }, [handleImageFile]);
+
+  /* ─── Drag and Drop ─── */
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes('Files')) setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    if (!editorRef.current?.contains(e.relatedTarget)) setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = Array.from(e.dataTransfer.files).find(f => f.type.startsWith('image/'));
+    if (file) {
+      // Set caret at drop position
+      let range;
+      if (document.caretRangeFromPoint) {
+        range = document.caretRangeFromPoint(e.clientX, e.clientY);
+      } else if (document.caretPositionFromPoint) {
+        const pos = document.caretPositionFromPoint(e.clientX, e.clientY);
+        if (pos) {
+          range = document.createRange();
+          range.setStart(pos.offsetNode, pos.offset);
+          range.collapse(true);
+        }
+      }
+      if (range) {
+        savedRangeRef.current = range;
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      await handleImageFile(file);
+    }
+  }, [handleImageFile]);
+
+  /* ─── Image alignment handler (activated on figure click) ─── */
+  const handleEditorClick = useCallback((e) => {
+    // Clear any previously selected figure
+    editorRef.current?.querySelectorAll('.content-img-wrap.selected').forEach(f => f.classList.remove('selected'));
+
+    const fig = e.target.closest('figure.content-img-wrap');
+    if (fig) {
+      fig.classList.add('selected');
+      e.stopPropagation();
+    }
+  }, []);
+
+  /* ─── Deselect figure on editor blur ─── */
+  useEffect(() => {
+    const deselect = () => {
+      editorRef.current?.querySelectorAll('.content-img-wrap.selected').forEach(f => f.classList.remove('selected'));
+    };
+    document.addEventListener('click', deselect);
+    return () => document.removeEventListener('click', deselect);
+  }, []);
+
+  /* ─── Figure alignment buttons (rendered as floating toolbar) ─── */
+  const handleAlignFigure = useCallback((align, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const fig = editorRef.current?.querySelector('figure.content-img-wrap.selected');
+    if (!fig) return;
+    fig.dataset.align = align;
+    emitChange();
+  }, [emitChange]);
+
   /* ─── Get the current word at caret (for transliteration) ─── */
   const getWordAtCaret = () => {
     const sel = window.getSelection();
@@ -94,7 +310,6 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
 
     const text = node.textContent;
     const offset = range.startOffset;
-    // Find word start (go back until space/newline)
     let start = offset;
     while (start > 0 && !/[\s\n]/.test(text[start - 1])) start--;
     const word = text.slice(start, offset);
@@ -109,7 +324,6 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
     const after = text.slice(wordEnd);
     node.textContent = before + replacement + sep + after;
 
-    // Move caret after replacement + sep
     const newOffset = wordStart + replacement.length + sep.length;
     const sel = window.getSelection();
     const range = document.createRange();
@@ -121,7 +335,6 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
 
   /* ─── Transliterate on Space / Enter ─── */
   const handleKeyDown = async (e) => {
-    // Close suggestions on any other key
     if (suggestions && e.key !== ' ' && e.key !== 'Enter' && e.key !== 'Process') {
       setSuggestions(null);
       lastInsertRef.current = null;
@@ -137,7 +350,7 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
     const sep = e.key === 'Enter' ? '\n' : ' ';
 
     const isHindiWord = /[\u0900-\u097F]/.test(word);
-    
+
     if (isHindiWord) {
       e.preventDefault();
       replaceWordInNode(node, wordStart, wordEnd, word, sep);
@@ -149,7 +362,6 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
 
     const list = await fetchSuggestions(word);
     if (!list.length) {
-      // No conversion — just insert word + sep as-is
       replaceWordInNode(node, wordStart, wordEnd, word, sep);
       emitChange();
       return;
@@ -159,10 +371,8 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
     replaceWordInNode(node, wordStart, wordEnd, best, sep);
     emitChange();
 
-    // Record for suggestion swapping
     lastInsertRef.current = { node, wordStart, wordLength: best.length, sep };
 
-    // Show dropdown only for known ambiguous words
     if (list.length > 1 && SHOW_SUGGESTIONS_FOR.has(word.toLowerCase())) {
       setSuggestions({ list });
     }
@@ -193,15 +403,14 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
     editorRef.current?.focus();
   };
 
-  /* ─── Apply block format (heading / paragraph) via execCommand ─── */
+  /* ─── Apply block format ─── */
   const applyBlockFormat = (tag) => {
     editorRef.current?.focus();
-    // formatBlock wraps current block in the given tag
     document.execCommand('formatBlock', false, tag === 'p' ? 'p' : tag);
     emitChange();
   };
 
-  /* ─── Apply inline format (bold / italic) ─── */
+  /* ─── Apply inline format ─── */
   const applyInlineFormat = (tag) => {
     editorRef.current?.focus();
     if (tag === 'strong') document.execCommand('bold', false, null);
@@ -241,7 +450,7 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
       {/* ─── Toolbar ─── */}
       <div className="hi-toolbar">
         {TOOLBAR_ITEMS.map((item, i) =>
-          item === 'divider' ? (
+          item === 'divider' || item === 'divider-align' ? (
             <span key={i} className="wp-toolbar-divider" />
           ) : (
             <button
@@ -250,7 +459,7 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
               title={item.title}
               className={`hi-toolbar-btn ${item.block ? 'hi-toolbar-block-btn' : ''}`}
               onMouseDown={(e) => {
-                e.preventDefault(); // don't blur editor
+                e.preventDefault();
                 handleToolbarClick(item);
               }}
             >
@@ -258,7 +467,39 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
             </button>
           )
         )}
+
+        {/* ─── Insert Image Button ─── */}
+        <span className="wp-toolbar-divider" />
+        <button
+          type="button"
+          title="Insert Image (click or drag image into editor)"
+          className="hi-toolbar-btn hi-img-btn"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            handleInsertImageClick();
+          }}
+        >
+          <ImgIcon />
+          <span>Image</span>
+        </button>
+
         <span className="hi-toolbar-hint">Space → हिंदी</span>
+      </div>
+
+      {/* ─── Image Alignment Floating Toolbar ─── */}
+      <div className="hi-img-align-bar" role="toolbar" aria-label="Image alignment">
+        <button type="button" title="Align image left" className="hi-img-align-btn"
+          onMouseDown={(e) => handleAlignFigure('left', e)}>
+          <AlignLeftIcon />
+        </button>
+        <button type="button" title="Center image" className="hi-img-align-btn"
+          onMouseDown={(e) => handleAlignFigure('center', e)}>
+          <AlignCenterIcon />
+        </button>
+        <button type="button" title="Align image right" className="hi-img-align-btn"
+          onMouseDown={(e) => handleAlignFigure('right', e)}>
+          <AlignRightIcon />
+        </button>
       </div>
 
       {/* ─── Contenteditable Editor ─── */}
@@ -266,14 +507,46 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
-        className={`hi-rich-editor ${className || ''}`}
+        className={`hi-rich-editor ${isDragOver ? 'drag-over' : ''} ${className || ''}`}
         style={{ fontFamily: `'${fontFamily}', sans-serif` }}
         data-placeholder={placeholder}
         onInput={emitChange}
         onKeyDown={handleKeyDown}
+        onClick={handleEditorClick}
         onCompositionStart={() => { isComposing.current = true; }}
         onCompositionEnd={() => { isComposing.current = false; }}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onMouseUp={saveSelection}
+        onKeyUp={saveSelection}
       />
+
+      {/* ─── Hidden File Input ─── */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture={false}
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
+
+      {/* ─── Uploading Overlay ─── */}
+      {uploading && (
+        <div className="hi-uploading-overlay" aria-live="polite">
+          <div className="hi-uploading-spinner" />
+          <span>Uploading image…</span>
+        </div>
+      )}
+
+      {/* ─── Drag-and-Drop Hint ─── */}
+      {isDragOver && (
+        <div className="hi-drag-hint" aria-hidden="true">
+          <ImgIcon />
+          <span>Drop image to insert</span>
+        </div>
+      )}
 
       {/* ─── Suggestion Dropdown ─── */}
       {suggestions && suggestions.list.length > 1 && (
