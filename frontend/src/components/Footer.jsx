@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { navigateTo } from '../utils/news';
+import { CATEGORIES_API_URL, navigateTo } from '../utils/news';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -8,7 +8,7 @@ const Footer = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`/api/categories`);
+        const response = await fetch(CATEGORIES_API_URL);
         const data = await response.json();
         if (Array.isArray(data)) {
           const activeCategories = data

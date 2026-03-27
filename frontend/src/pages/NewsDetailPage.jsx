@@ -61,7 +61,7 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
     }
 
     const imageUrl = article.featuredImage?.url
-      ? (article.featuredImage.url.startsWith('http') ? article.featuredImage.url : `${window.location.origin}${article.featuredImage.url}`)
+      ? resolveMediaUrl(article.featuredImage.url)
       : '';
     const canonicalUrl = window.location.href;
     const description = article.seo?.metaDescription || article.excerpt || '';
