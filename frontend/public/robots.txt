@@ -9,4 +9,4 @@ Disallow: /api/
 Crawl-delay: 1
 
 # Sitemap location
-Sitemap: http://localhost:5000/sitemap.xml
+Sitemap: /sitemap.xml

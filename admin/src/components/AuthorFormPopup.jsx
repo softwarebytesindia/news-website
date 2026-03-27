@@ -1,22 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Popup from './Popup';
-
-const API_BASE_URL = 'http://localhost:5000';
-const API_URL = `${API_BASE_URL}/api/authors`;
-const UPLOAD_URL = `${API_BASE_URL}/api/upload/image`;
+import { AUTHORS_API_URL, UPLOAD_IMAGE_API_URL, resolveMediaUrl } from '../utils/api';
 
 const getInitialFormData = (authorItem = null) => ({
   name: authorItem?.name || '',
   bio: authorItem?.bio || '',
   avatar: authorItem?.avatar || ''
 });
-
-const resolveMediaUrl = (url) => {
-  if (!url) return '';
-  if (/^https?:\/\//i.test(url)) return url;
-  return `${API_BASE_URL}${url}`;
-};
 
 const AuthorFormPopup = ({ isOpen, onClose, onSuccess, authorItem }) => {
   const [formData, setFormData] = useState(getInitialFormData());
@@ -69,7 +60,7 @@ const AuthorFormPopup = ({ isOpen, onClose, onSuccess, authorItem }) => {
         const uploadFormData = new FormData();
         uploadFormData.append('image', imageFile);
 
-        const uploadRes = await fetch(UPLOAD_URL, {
+        const uploadRes = await fetch(UPLOAD_IMAGE_API_URL, {
           method: 'POST',
           body: uploadFormData
         });
@@ -88,7 +79,7 @@ const AuthorFormPopup = ({ isOpen, onClose, onSuccess, authorItem }) => {
         avatar
       };
 
-      const url = authorItem ? `${API_URL}/${authorItem._id}` : API_URL;
+      const url = authorItem ? `${AUTHORS_API_URL}/${authorItem._id}` : AUTHORS_API_URL;
       const method = authorItem ? 'PUT' : 'POST';
       const response = await fetch(url, {
         method,

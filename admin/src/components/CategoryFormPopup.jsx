@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Popup from './Popup';
+import { CATEGORIES_API_URL } from '../utils/api';
 
 const getInitialFormData = (category = null) => ({
   name: category?.name || '',
@@ -13,8 +14,6 @@ const getInitialFormData = (category = null) => ({
 const CategoryFormPopup = ({ isOpen, onClose, onSuccess, category }) => {
   const [formData, setFormData] = useState(getInitialFormData());
 
-  const API_URL = 'http://localhost:5000/api/categories';
-
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -26,7 +25,7 @@ const CategoryFormPopup = ({ isOpen, onClose, onSuccess, category }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(category ? `${API_URL}/${category._id}` : API_URL, {
+      const response = await fetch(category ? `${CATEGORIES_API_URL}/${category._id}` : CATEGORIES_API_URL, {
         method: category ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

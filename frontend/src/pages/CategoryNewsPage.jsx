@@ -55,9 +55,7 @@ const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
     // Use first article's image as OG image for the category page
     const firstArticle = Array.isArray(pageData.news) ? pageData.news[0] : null;
     const imageUrl = firstArticle?.featuredImage?.url
-      ? (firstArticle.featuredImage.url.startsWith('http')
-          ? firstArticle.featuredImage.url
-          : `${window.location.origin}${firstArticle.featuredImage.url}`)
+      ? resolveMediaUrl(firstArticle.featuredImage.url)
       : `${window.location.origin}/news.webp`;
 
     return applySeoMeta({

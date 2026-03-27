@@ -1,12 +1,14 @@
-export const API_BASE_URL = '';
-export const NEWS_API_URL = `/api/news`;
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+export const NEWS_API_URL = `${API_BASE_URL}/api/news`;
+export const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories`;
 export const SITE_NAME = 'New Bharat Digital';
 export const SITE_URL = window.location.origin;
 
 export const resolveMediaUrl = (url) => {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
-  return url.startsWith('/') ? url : `/${url}`;
+  return url.startsWith('/') ? `${API_BASE_URL}${url}` : `${API_BASE_URL}/${url}`;
 };
 
 export const formatNewsDate = (value) => {

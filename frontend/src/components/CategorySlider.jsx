@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { navigateTo } from '../utils/news';
+import { CATEGORIES_API_URL, navigateTo } from '../utils/news';
 
 const CategorySlider = () => {
   const [categories, setCategories] = useState([{ name: 'All', href: '/' }]);
@@ -18,7 +18,7 @@ const CategorySlider = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`/api/categories`);
+        const response = await fetch(CATEGORIES_API_URL);
 
         if (!response.ok) {
           throw new Error('Failed to load categories');

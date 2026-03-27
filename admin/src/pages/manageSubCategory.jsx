@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import SubCategoryFormPopup from '../components/SubCategoryFormPopup';
-
-const SUBCATEGORY_API_URL = 'http://localhost:5000/api/subcategories';
+import { SUBCATEGORIES_API_URL } from '../utils/api';
 
 const ManageSubCategory = () => {
   const [subCategories, setSubCategories] = useState([]);
@@ -15,7 +14,7 @@ const ManageSubCategory = () => {
 
   const fetchSubCategories = async () => {
     try {
-      const response = await fetch(SUBCATEGORY_API_URL);
+      const response = await fetch(SUBCATEGORIES_API_URL);
       const data = await response.json();
       setSubCategories(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -28,7 +27,7 @@ const ManageSubCategory = () => {
     if (!confirm('Are you sure you want to delete this subcategory?')) return;
 
     try {
-      const response = await fetch(`${SUBCATEGORY_API_URL}/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${SUBCATEGORIES_API_URL}/${id}`, { method: 'DELETE' });
       const data = await response.json();
 
       if (!response.ok) {
@@ -45,7 +44,7 @@ const ManageSubCategory = () => {
 
   const toggleActive = async (item) => {
     try {
-      const response = await fetch(`${SUBCATEGORY_API_URL}/${item._id}`, {
+      const response = await fetch(`${SUBCATEGORIES_API_URL}/${item._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import CategoryFormPopup from '../components/CategoryFormPopup';
+import { CATEGORIES_API_URL } from '../utils/api';
 
 const ManageCategory = () => {
   const [categories, setCategories] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-
-  const API_URL = 'http://localhost:5000/api/categories';
 
   useEffect(() => {
     fetchCategories();
@@ -15,7 +14,7 @@ const ManageCategory = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(CATEGORIES_API_URL);
       const data = await res.json();
       setCategories(data);
     } catch (error) {
@@ -26,7 +25,7 @@ const ManageCategory = () => {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this category?')) return;
     try {
-      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      await fetch(`${CATEGORIES_API_URL}/${id}`, { method: 'DELETE' });
       toast.success('Category deleted successfully');
       fetchCategories();
     } catch (error) {
@@ -38,7 +37,7 @@ const ManageCategory = () => {
   const toggleActive = async (id, currentStatus) => {
     try {
       const category = categories.find(c => c._id === id);
-      await fetch(`${API_URL}/${id}`, {
+      await fetch(`${CATEGORIES_API_URL}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...category, isActive: !currentStatus }),
