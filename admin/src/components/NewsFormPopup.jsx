@@ -30,7 +30,7 @@ const getInitialFormData = (newsItem = null) => ({
   subCategory: newsItem?.subCategory?._id || newsItem?.subCategory || '',
   author: newsItem?.author?._id || newsItem?.author || '',
   tags: Array.isArray(newsItem?.tags) ? newsItem.tags.join(', ') : '',
-  status: newsItem?.status || 'draft',
+  status: newsItem?.status || 'published',
   isBreaking: Boolean(newsItem?.isBreaking),
   metaTitle: newsItem?.seo?.metaTitle || '',
   metaDescription: newsItem?.seo?.metaDescription || '',
