@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import NewsFormPopup from '../components/NewsFormPopup';
-
-const API_BASE_URL = 'http://localhost:5000';
-
-const resolveMediaUrl = (url) => {
-  if (!url) return '';
-  if (/^https?:\/\//i.test(url)) return url;
-  return `${API_BASE_URL}${url}`;
-};
+import { NEWS_API_URL, resolveMediaUrl } from '../utils/api';
 
 const formatDate = (value) => {
   if (!value) return 'N/A';
@@ -48,15 +41,13 @@ const ManageNews = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [selectedNews, setSelectedNews] = useState(null);
 
-  const API_URL = 'http://localhost:5000/api/news';
-
   useEffect(() => {
     fetchNews();
   }, []);
 
   const fetchNews = async () => {
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(NEWS_API_URL);
       const data = await res.json();
       setNews(data);
     } catch (error) {
@@ -67,7 +58,7 @@ const ManageNews = () => {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this news?')) return;
     try {
-      const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${NEWS_API_URL}/${id}`, { method: 'DELETE' });
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to delete news');
@@ -82,7 +73,7 @@ const ManageNews = () => {
 
   const handleToggleBreaking = async (item, isBreaking) => {
     try {
-      const response = await fetch(`${API_URL}/${item._id}/breaking`, {
+      const response = await fetch(`${NEWS_API_URL}/${item._id}/breaking`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isBreaking })

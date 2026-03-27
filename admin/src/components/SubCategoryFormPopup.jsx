@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Popup from './Popup';
-
-const CATEGORY_API_URL = 'http://localhost:5000/api/categories';
-const SUBCATEGORY_API_URL = 'http://localhost:5000/api/subcategories';
+import { CATEGORIES_API_URL, SUBCATEGORIES_API_URL } from '../utils/api';
 
 const getInitialFormData = (subCategory = null) => ({
   category: subCategory?.category?._id || subCategory?.category || '',
@@ -28,7 +26,7 @@ const SubCategoryFormPopup = ({ isOpen, onClose, onSuccess, subCategory }) => {
     const fetchCategories = async () => {
       try {
         setLoading(true);
-        const response = await fetch(CATEGORY_API_URL);
+        const response = await fetch(CATEGORIES_API_URL);
         const data = await response.json();
 
         if (!response.ok) {
@@ -52,7 +50,7 @@ const SubCategoryFormPopup = ({ isOpen, onClose, onSuccess, subCategory }) => {
 
     try {
       setLoading(true);
-      const response = await fetch(subCategory ? `${SUBCATEGORY_API_URL}/${subCategory._id}` : SUBCATEGORY_API_URL, {
+      const response = await fetch(subCategory ? `${SUBCATEGORIES_API_URL}/${subCategory._id}` : SUBCATEGORIES_API_URL, {
         method: subCategory ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

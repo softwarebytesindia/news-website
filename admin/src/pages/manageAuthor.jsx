@@ -1,15 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import AuthorFormPopup from '../components/AuthorFormPopup';
-
-const API_BASE_URL = 'http://localhost:5000';
-const API_URL = `${API_BASE_URL}/api/authors`;
-
-const resolveMediaUrl = (url) => {
-  if (!url) return '';
-  if (/^https?:\/\//i.test(url)) return url;
-  return `${API_BASE_URL}${url}`;
-};
+import { AUTHORS_API_URL, resolveMediaUrl } from '../utils/api';
 
 const ManageAuthor = () => {
   const [authors, setAuthors] = useState([]);
@@ -22,7 +14,7 @@ const ManageAuthor = () => {
 
   const fetchAuthors = async () => {
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(AUTHORS_API_URL);
       const data = await response.json();
       setAuthors(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -50,7 +42,7 @@ const ManageAuthor = () => {
     if (!confirm('Are you sure you want to delete this author?')) return;
 
     try {
-      const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${AUTHORS_API_URL}/${id}`, { method: 'DELETE' });
       const data = await response.json();
 
       if (!response.ok) {

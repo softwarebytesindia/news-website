@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import HindiInput from './HindiInput';
-
-const API_BASE_URL = 'http://localhost:5000';
-const API_URL = `${API_BASE_URL}/api/news`;
-const CAT_API_URL = `${API_BASE_URL}/api/categories`;
-const SUBCATEGORY_API_URL = `${API_BASE_URL}/api/subcategories`;
-const AUTHOR_API_URL = `${API_BASE_URL}/api/authors`;
-const UPLOAD_URL = `${API_BASE_URL}/api/upload/image`;
+import {
+  API_BASE_URL,
+  AUTHORS_API_URL,
+  CATEGORIES_API_URL,
+  NEWS_API_URL,
+  SUBCATEGORIES_API_URL,
+  UPLOAD_IMAGE_API_URL,
+} from '../utils/api';
 const STATUS_OPTIONS = ['draft', 'review', 'scheduled', 'published', 'archived'];
 
 const HINDI_FONTS = [
@@ -83,9 +84,9 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
       try {
         setLoadingOptions(true);
         const [cRes, sRes, aRes] = await Promise.all([
-          fetch(CAT_API_URL),
-          fetch(SUBCATEGORY_API_URL),
-          fetch(AUTHOR_API_URL)
+          fetch(CATEGORIES_API_URL),
+          fetch(SUBCATEGORIES_API_URL),
+          fetch(AUTHORS_API_URL)
         ]);
         if (!cRes.ok || !sRes.ok || !aRes.ok) throw new Error('Failed to load form options');
         const [cData, sData, aData] = await Promise.all([cRes.json(), sRes.json(), aRes.json()]);
@@ -135,7 +136,7 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
       if (imageFile) {
         const fd = new FormData();
         fd.append('image', imageFile);
-        const res = await fetch(UPLOAD_URL, { method: 'POST', body: fd });
+        const res = await fetch(UPLOAD_IMAGE_API_URL, { method: 'POST', body: fd });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Image upload failed');
         featuredImageUrl = data.filePath || featuredImageUrl;
@@ -160,7 +161,7 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
         hindiFont: formData.hindiFont
       };
 
-      const url = newsItem ? `${API_URL}/${newsItem._id}` : API_URL;
+      const url = newsItem ? `${NEWS_API_URL}/${newsItem._id}` : NEWS_API_URL;
       const method = newsItem ? 'PUT' : 'POST';
       const response = await fetch(url, {
         method,
