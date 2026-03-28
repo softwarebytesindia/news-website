@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SocialBar from '../components/SocialBar';
 import CommentsSection from '../components/CommentsSection';
-import { applySeoMeta, NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
+import { applySeoMeta, NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl, linkifyHtml } from '../utils/news';
 
 const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
   const [article, setArticle] = useState(null);
@@ -189,7 +189,7 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                   <div
                     className="news-content"
                     style={article.hindiFont ? { fontFamily: `'${article.hindiFont}', sans-serif` } : undefined}
-                    dangerouslySetInnerHTML={{ __html: article.content }}
+                    dangerouslySetInnerHTML={{ __html: linkifyHtml(article.content) }}
                   />
 
                   {/* Tags Section */}

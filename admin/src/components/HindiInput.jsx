@@ -420,6 +420,7 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
     }
   };
 
+
   /* ─── Apply block format ─── */
   const applyBlockFormat = (tag) => {
     editorRef.current?.focus();

@@ -102,6 +102,73 @@ const ensureLink = (rel, id) => {
 };
 
 /**
+ * Securely converts plain text URLs within an HTML string into clickable <a> tags.
+ * It uses DOMParser to traverse only text nodes, completely avoiding modification
+ * of existing HTML attributes (like href or src) and skipping already-linked text.
+ */
+export const linkifyHtml = (html) => {
+  if (!html) return '';
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  const urlRegex = /(https?:\/\/[^\s<]+)/g;
+
+  const traverse = (node) => {
+    // Skip interactive/existing link elements
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const tag = node.tagName.toLowerCase();
+      if (tag === 'a' || tag === 'button' || tag === 'script' || tag === 'style') {
+        return;
+      }
+      Array.from(node.childNodes).forEach(traverse);
+    } else if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.nodeValue;
+      if (urlRegex.test(text)) {
+        urlRegex.lastIndex = 0; // reset
+        const fragment = document.createDocumentFragment();
+        let lastIndex = 0;
+        let match;
+
+        while ((match = urlRegex.exec(text)) !== null) {
+          if (match.index > lastIndex) {
+            fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+          }
+          
+          const a = document.createElement('a');
+          const url = match[0];
+          
+          // Remove trailing punctuation that might get caught if user typed "url.com,"
+          const cleanUrl = url.replace(/[.,;!?]+$/, '');
+          const punctuation = url.slice(cleanUrl.length);
+          
+          a.href = cleanUrl;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.className = 'text-blue-600 hover:text-blue-800 underline break-words';
+          a.textContent = cleanUrl;
+          fragment.appendChild(a);
+          
+          if (punctuation) {
+            fragment.appendChild(document.createTextNode(punctuation));
+          }
+          
+          lastIndex = match.index + url.length;
+        }
+
+        if (lastIndex < text.length) {
+          fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+        }
+
+        node.parentNode.replaceChild(fragment, node);
+      }
+    }
+  };
+
+  traverse(doc.body);
+  return doc.body.innerHTML;
+};
+
+/**
  * applySeoMeta — sets all important SEO meta tags and returns a cleanup fn.
  * @param {object} opts
  * @param {string} opts.title
