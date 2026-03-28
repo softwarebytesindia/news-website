@@ -46,6 +46,10 @@ const Hero = ({ articles, loading, error }) => (
                     src={resolveMediaUrl(news.featuredImage.url)}
                     alt={news.featuredImage.alt || news.title}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    fetchpriority="high"
+                    width="600"
+                    height="400"
+                    decoding="async"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-red-50 via-white to-gray-100" />

@@ -40,7 +40,8 @@ const SearchPage = () => {
       title: pageTitle,
       description: desc,
       url: window.location.origin + '/search' + (query ? `?q=${encodeURIComponent(query)}` : ''),
-      type: 'website'
+      type: 'website',
+      robots: 'noindex, follow' // Crucial: don't index search result pages!
     });
   }, [query, total]);
 

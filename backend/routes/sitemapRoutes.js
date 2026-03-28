@@ -213,4 +213,70 @@ ${[...staticUrls, ...categoryUrls, ...subCategoryUrls].join('\n')}
   }
 });
 
+/**
+ * GET /rss.xml — Standard RSS 2.0 Feed (for aggregators & Google Publisher Center)
+ */
+router.get('/rss.xml', async (req, res) => {
+  try {
+    const articles = await News.find({ status: 'published' })
+      .populate([{ path: 'category' }, { path: 'subCategory', select: 'slug' }, { path: 'author', select: 'name' }])
+      .sort({ createdAt: -1 })
+      .limit(50); // Typical RSS max length
+
+    const buildRfc822Date = (date) => {
+      const d = date ? new Date(date) : new Date();
+      return d.toUTCString();
+    };
+    const now = buildRfc822Date();
+
+    const items = articles.map((article) => {
+      const categorySlug = article.category?.slug;
+      const subCategorySlug = article.subCategory?.slug;
+      if (!categorySlug) return '';
+
+      const articlePath = subCategorySlug
+        ? `/${categorySlug}/${subCategorySlug}/${article.slug}`
+        : `/${categorySlug}/${article.slug}`;
+      const url = `${SITE_URL}${articlePath}`;
+
+      // Enclosure for RSS media readers (e.g. Flipboard)
+      let enclosure = '';
+      if (article.featuredImage?.url) {
+        const rawUrl = article.featuredImage.url;
+        const absUrl = rawUrl.startsWith('http') ? rawUrl : `${SITE_URL}${rawUrl}`;
+        enclosure = `\n      <enclosure url="${escapeXml(absUrl)}" type="image/webp" />`;
+      }
+
+      return `    <item>
+      <title>${escapeXml(article.title)}</title>
+      <link>${escapeXml(url)}</link>
+      <guid isPermaLink="true">${escapeXml(url)}</guid>
+      <pubDate>${buildRfc822Date(article.createdAt)}</pubDate>
+      <category>${escapeXml(article.category.name)}</category>
+      <description><![CDATA[${article.excerpt || ''}]]></description>${enclosure}
+      <author>${escapeXml(article.author?.name || 'New Bharat Digital')}</author>
+    </item>`;
+    }).filter(Boolean);
+
+    const xml = `${xmlHeader}<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>${escapeXml(SITE_NAME)}</title>
+    <link>${SITE_URL}</link>
+    <description>ताजा खबरें, ब्रेकिंग न्यूज़ और सभी प्रमुख श्रेणियों की हिंदी समाचार अपडेट पढ़ें।</description>
+    <language>${SITE_LANGUAGE}</language>
+    <pubDate>${now}</pubDate>
+    <lastBuildDate>${now}</lastBuildDate>
+    <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml" />
+${items.join('\n')}
+  </channel>
+</rss>`;
+
+    res.setHeader('Content-Type', 'application/rss+xml; charset=UTF-8');
+    res.setHeader('Cache-Control', 'public, max-age=600'); // Cache 10 min
+    res.send(xml);
+  } catch (err) {
+    res.status(500).send('Error generating RSS feed');
+  }
+});
+
 module.exports = router;

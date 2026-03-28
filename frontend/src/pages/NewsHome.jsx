@@ -98,6 +98,10 @@ const NewsHome = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      
+      {/* Hidden H1 for SEO purposes (Homepage must have an H1) */}
+      <h1 className="sr-only">New Bharat Digital — ताजा हिंदी समाचार | Breaking News</h1>
+
       <CategorySlider />
       <Hero articles={breakingNews} loading={loadingNews} error={newsError} />
 

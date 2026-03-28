@@ -202,6 +202,7 @@ const toCanonicalUrl = (url = '') => {
  * @param {string} [opts.author]           author name — article:author
  * @param {string} [opts.section]          category name — article:section
  * @param {string[]} [opts.tags]           tag list — article:tag
+ * @param {string} [opts.robots]           e.g. 'noindex, follow' (defaults to 'index, follow')
  */
 export const applySeoMeta = ({
   title = '',
@@ -216,7 +217,8 @@ export const applySeoMeta = ({
   modifiedTime = '',
   author = '',
   section = '',
-  tags = []
+  tags = [],
+  robots = 'index, follow'
 } = {}) => {
   if (typeof document === 'undefined') return () => {};
 
@@ -240,12 +242,14 @@ export const applySeoMeta = ({
     twDesc: ensureMetaName('twitter:description').getAttribute('content') || '',
     twImage: ensureMetaName('twitter:image').getAttribute('content') || '',
     twSite: ensureMetaName('twitter:site').getAttribute('content') || '',
+    robots: ensureMetaName('robots').getAttribute('content') || 'index, follow',
     hadArticleMeta: !!document.head.querySelector('meta[property="article:published_time"]'),
   };
 
   // ── Apply core tags ──────────────────────────────────────────────────────
   document.title = fullTitle;
   ensureMetaName('description').setAttribute('content', description);
+  ensureMetaName('robots').setAttribute('content', robots);
   ensureLink('canonical', 'seo').setAttribute('href', canonical);
 
   // Open Graph
@@ -300,6 +304,7 @@ export const applySeoMeta = ({
   return () => {
     document.title = prev.title;
     ensureMetaName('description').setAttribute('content', prev.description);
+    ensureMetaName('robots').setAttribute('content', prev.robots);
     ensureLink('canonical', 'seo').setAttribute('href', prev.canonical);
     ensureMetaProp('og:title').setAttribute('content', prev.ogTitle);
     ensureMetaProp('og:description').setAttribute('content', prev.ogDesc);
