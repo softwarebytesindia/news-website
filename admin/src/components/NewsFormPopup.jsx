@@ -84,9 +84,9 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
       try {
         setLoadingOptions(true);
         const [cRes, sRes, aRes] = await Promise.all([
-          fetch(CATEGORIES_API_URL),
-          fetch(SUBCATEGORIES_API_URL),
-          fetch(AUTHORS_API_URL)
+          fetch(CATEGORIES_API_URL, { cache: 'no-cache' }),
+          fetch(SUBCATEGORIES_API_URL, { cache: 'no-cache' }),
+          fetch(AUTHORS_API_URL, { cache: 'no-cache' })
         ]);
         if (!cRes.ok || !sRes.ok || !aRes.ok) throw new Error('Failed to load form options');
         const [cData, sData, aData] = await Promise.all([cRes.json(), sRes.json(), aRes.json()]);

@@ -26,7 +26,7 @@ const SubCategoryFormPopup = ({ isOpen, onClose, onSuccess, subCategory }) => {
     const fetchCategories = async () => {
       try {
         setLoading(true);
-        const response = await fetch(CATEGORIES_API_URL);
+        const response = await fetch(CATEGORIES_API_URL, { cache: 'no-cache' });
         const data = await response.json();
 
         if (!response.ok) {

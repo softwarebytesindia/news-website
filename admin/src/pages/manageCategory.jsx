@@ -14,7 +14,7 @@ const ManageCategory = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch(CATEGORIES_API_URL);
+      const res = await fetch(CATEGORIES_API_URL, { cache: 'no-cache' });
       const data = await res.json();
       setCategories(data);
     } catch (error) {
