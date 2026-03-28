@@ -319,18 +319,29 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
 
   /* ─── Replace word in text node with Hindi ─── */
   const replaceWordInNode = (node, wordStart, wordEnd, replacement, sep) => {
-    const text = node.textContent;
-    const before = text.slice(0, wordStart);
-    const after = text.slice(wordEnd);
-    node.textContent = before + replacement + sep + after;
+    // Validate bounds in case DOM mutated slightly during async fetch
+    if (!node.isConnected || node.nodeType !== Node.TEXT_NODE) return;
+    const maxLen = node.textContent.length;
+    const start = Math.min(wordStart, maxLen);
+    const end = Math.min(wordEnd, maxLen);
 
-    const newOffset = wordStart + replacement.length + sep.length;
     const sel = window.getSelection();
     const range = document.createRange();
-    range.setStart(node, newOffset);
-    range.collapse(true);
+    range.setStart(node, start);
+    range.setEnd(node, end);
     sel.removeAllRanges();
     sel.addRange(range);
+
+    // Use native insertText to guarantee flawless cursor advancement
+    // and undo-history. For trailing spaces, \u00A0 prevents cursor trapping.
+    const safeSep = sep === ' ' ? '\u00A0' : sep;
+    
+    if (safeSep === '\n') {
+      document.execCommand('insertText', false, replacement);
+      document.execCommand('insertParagraph', false, null);
+    } else {
+      document.execCommand('insertText', false, replacement + safeSep);
+    }
   };
 
   /* ─── Transliterate on Space / Enter ─── */
@@ -386,21 +397,27 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
     if (!info) return;
 
     const { node, wordStart, wordLength, sep } = info;
-    const text = node.textContent;
-    const before = text.slice(0, wordStart);
-    const after = text.slice(wordStart + wordLength + sep.length);
-    node.textContent = before + chosen + sep + after;
-
-    const newOffset = wordStart + chosen.length + sep.length;
+    
+    // Validate bounds
+    if (!node.isConnected || node.nodeType !== Node.TEXT_NODE) return;
+    const maxLen = node.textContent.length;
+    
     const sel = window.getSelection();
     const range = document.createRange();
-    range.setStart(node, newOffset);
-    range.collapse(true);
+    range.setStart(node, Math.min(wordStart, maxLen));
+    range.setEnd(node, Math.min(wordStart + wordLength + sep.length, maxLen));
     sel.removeAllRanges();
     sel.addRange(range);
 
-    emitChange();
+    const safeSep = sep === ' ' ? '\u00A0' : sep;
     editorRef.current?.focus();
+    
+    if (safeSep === '\n') {
+      document.execCommand('insertText', false, chosen);
+      document.execCommand('insertParagraph', false, null);
+    } else {
+      document.execCommand('insertText', false, chosen + safeSep);
+    }
   };
 
   /* ─── Apply block format ─── */
