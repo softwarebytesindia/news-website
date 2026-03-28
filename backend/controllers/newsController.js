@@ -12,17 +12,21 @@ const POPULATE_OPTIONS = [
 const VALID_STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived'];
 const BREAKING_NEWS_LIMIT = 4;
 
-const slugify = (value = '') => value
-  .toString()
-  .toLowerCase()
-  .trim()
-  .replace(/['"]/g, '')
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '')
-  .replace(/-{2,}/g, '-');
+const { slugify: transliterateSlugify } = require('transliteration');
+
+const slugify = (value = '') => {
+  let slug = transliterateSlugify(value, { lowercase: true, separator: '-' });
+  slug = slug.replace(/[^a-z0-9\-]+/g, '').replace(/^-+|-+$/g, '').replace(/-{2,}/g, '-');
+  
+  // Enforce non-numeric strictly: if it's empty or entirely numbers/hyphens, prepend 'post-'
+  if (!slug || /^[\d\-]+$/.test(slug)) {
+    slug = slug ? `post-${slug}` : `post-${Date.now()}`;
+  }
+  return slug;
+};
 
 const getUniqueNewsSlug = async (value, excludeId = null) => {
-  const baseSlug = slugify(value) || `news-${Date.now()}`;
+  const baseSlug = slugify(value);
   let slug = baseSlug;
   let counter = 1;
 

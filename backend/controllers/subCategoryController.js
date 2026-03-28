@@ -4,10 +4,11 @@ const SubCategory = require('../model/subCategory');
 
 const slugify = (value = '') => value
   .toString()
-  .toLowerCase()
   .trim()
-  .replace(/['"]/g, '')
-  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/['"“”‘’]/g, '')
+  .replace(/[\s_]+/g, '-')
+  .toLowerCase()
+  .replace(/[^\w\u0900-\u097F\-]+/g, '')
   .replace(/^-+|-+$/g, '')
   .replace(/-{2,}/g, '-');
 

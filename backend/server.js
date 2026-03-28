@@ -199,7 +199,22 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin', 'index.html'));
 });
 
-// ── 404 Handler ───────────────────────────────────────────────────────────────
+// ── Frontend Static Hosting (Crucial for Bot SEO Prerendering) ───────────
+const frontendStaticPath = path.join(__dirname, '..', 'frontend', 'dist');
+app.use(express.static(frontendStaticPath, { index: false }));
+
+// Fallback all other routes to frontend's index.html to support React Router
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/admin')) {
+    return next();
+  }
+  const indexPath = path.join(frontendStaticPath, 'index.html');
+  res.sendFile(indexPath, err => {
+    if (err) next();
+  });
+});
+
+// ── 404 Handler ──────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });

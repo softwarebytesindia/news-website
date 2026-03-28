@@ -6,7 +6,10 @@ const createCategory = async (req, res) => {
   try {
     const { name, description, priority, seo } = req.body;
     const normalizedName = normalizeName(name);
-    const slug = normalizedName.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    let slug = require('transliteration').slugify(normalizedName, { lowercase: true, separator: '-' });
+    slug = slug.replace(/[^a-z0-9\-]+/g, '').replace(/^-+|-+$/g, '').replace(/-{2,}/g, '-');
+    if (!slug || /^[\d\-]+$/.test(slug)) slug = slug ? `cat-${slug}` : `cat-${Date.now()}`;
+    
     const normalizedPriority = Number.isFinite(Number(priority)) ? Math.max(0, Number(priority)) : 0;
     const seoInput = seo && typeof seo === 'object' ? seo : {};
     
@@ -50,7 +53,10 @@ const updateCategory = async (req, res) => {
   try {
     const { name, description, priority, isActive, seo } = req.body;
     const normalizedName = normalizeName(name);
-    const slug = normalizedName.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    let slug = require('transliteration').slugify(normalizedName, { lowercase: true, separator: '-' });
+    slug = slug.replace(/[^a-z0-9\-]+/g, '').replace(/^-+|-+$/g, '').replace(/-{2,}/g, '-');
+    if (!slug || /^[\d\-]+$/.test(slug)) slug = slug ? `cat-${slug}` : `cat-${Date.now()}`;
+    
     const normalizedPriority = Number.isFinite(Number(priority)) ? Math.max(0, Number(priority)) : 0;
     const seoInput = seo && typeof seo === 'object' ? seo : {};
     

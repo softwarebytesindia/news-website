@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Breadcrumb from '../components/Breadcrumb';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import SocialBar from '../components/SocialBar';
+import SocialBar, { TopShareBar } from '../components/SocialBar';
 import CommentsSection from '../components/CommentsSection';
 import { applySeoMeta, NEWS_API_URL, SITE_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl, linkifyHtml } from '../utils/news';
 
@@ -215,6 +215,9 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                       {article.excerpt}
                     </p>
                   ) : null}
+
+                  {/* Top Share Bar */}
+                  <TopShareBar title={article.title} url={typeof window !== 'undefined' ? window.location.href : ''} />
                 </div>
 
                 <div className="px-5 sm:px-8 pb-8">
