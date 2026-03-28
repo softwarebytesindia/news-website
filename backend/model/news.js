@@ -116,4 +116,10 @@ newsSchema.index({ status: 1, createdAt: -1 });
 newsSchema.index({ category: 1, status: 1, createdAt: -1 });
 newsSchema.index({ tags: 1 });
 
+// Full-text search index for /api/search
+newsSchema.index(
+  { title: 'text', hindiTitle: 'text', excerpt: 'text', tags: 'text' },
+  { weights: { title: 10, hindiTitle: 10, tags: 5, excerpt: 3 }, name: 'news_text_search' }
+);
+
 module.exports = mongoose.model('News', newsSchema);

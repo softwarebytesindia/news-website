@@ -331,23 +331,34 @@ const getNewsByCategoryListing = async (req, res) => {
       filter.subCategory = subCategory._id;
     }
 
-    const news = await News.find(filter)
-      .populate(POPULATE_OPTIONS)
-      .sort({ priority: -1, createdAt: -1 });
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(24, Math.max(1, parseInt(req.query.limit, 10) || 12));
+    const skip = (page - 1) * limit;
 
-    const latestNews = await News.find({
-      status: 'published',
-      _id: { $nin: news.map((item) => item._id) }
-    })
-      .populate(POPULATE_OPTIONS)
-      .sort({ priority: -1, createdAt: -1 })
-      .limit(8);
+    const [news, total, latestNews] = await Promise.all([
+      News.find(filter)
+        .populate(POPULATE_OPTIONS)
+        .sort({ priority: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      News.countDocuments(filter),
+      News.find({
+        status: 'published',
+        category: { $ne: category._id } // Get latest news from OTHER categories
+      })
+        .populate(POPULATE_OPTIONS)
+        .sort({ priority: -1, createdAt: -1 })
+        .limit(8)
+    ]);
 
     res.json({
       category,
       subCategory,
       news,
-      latestNews
+      latestNews,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

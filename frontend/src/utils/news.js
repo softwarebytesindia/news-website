@@ -2,8 +2,10 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:50
 
 export const NEWS_API_URL = `${API_BASE_URL}/api/news`;
 export const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories`;
+export const SEARCH_API_URL = `${API_BASE_URL}/api/search`;
 export const SITE_NAME = 'New Bharat Digital';
 export const SITE_URL = window.location.origin;
+export const TWITTER_HANDLE = '@NewBharatDigital'; // Update to your actual handle
 
 export const resolveMediaUrl = (url) => {
   if (!url) return '';
@@ -101,10 +103,14 @@ const ensureLink = (rel, id) => {
   return el;
 };
 
+/** Removes an OG/article meta property tag entirely (used during cleanup) */
+const removeMeta = (selector) => {
+  const el = document.head.querySelector(selector);
+  if (el) el.remove();
+};
+
 /**
  * Securely converts plain text URLs within an HTML string into clickable <a> tags.
- * It uses DOMParser to traverse only text nodes, completely avoiding modification
- * of existing HTML attributes (like href or src) and skipping already-linked text.
  */
 export const linkifyHtml = (html) => {
   if (!html) return '';
@@ -114,7 +120,6 @@ export const linkifyHtml = (html) => {
   const urlRegex = /(https?:\/\/[^\s<]+)/g;
 
   const traverse = (node) => {
-    // Skip interactive/existing link elements
     if (node.nodeType === Node.ELEMENT_NODE) {
       const tag = node.tagName.toLowerCase();
       if (tag === 'a' || tag === 'button' || tag === 'script' || tag === 'style') {
@@ -124,7 +129,7 @@ export const linkifyHtml = (html) => {
     } else if (node.nodeType === Node.TEXT_NODE) {
       const text = node.nodeValue;
       if (urlRegex.test(text)) {
-        urlRegex.lastIndex = 0; // reset
+        urlRegex.lastIndex = 0;
         const fragment = document.createDocumentFragment();
         let lastIndex = 0;
         let match;
@@ -133,25 +138,23 @@ export const linkifyHtml = (html) => {
           if (match.index > lastIndex) {
             fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
           }
-          
+
           const a = document.createElement('a');
           const url = match[0];
-          
-          // Remove trailing punctuation that might get caught if user typed "url.com,"
           const cleanUrl = url.replace(/[.,;!?]+$/, '');
           const punctuation = url.slice(cleanUrl.length);
-          
+
           a.href = cleanUrl;
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
           a.className = 'text-blue-600 hover:text-blue-800 underline break-words';
           a.textContent = cleanUrl;
           fragment.appendChild(a);
-          
+
           if (punctuation) {
             fragment.appendChild(document.createTextNode(punctuation));
           }
-          
+
           lastIndex = match.index + url.length;
         }
 
@@ -169,26 +172,55 @@ export const linkifyHtml = (html) => {
 };
 
 /**
+ * Strip query params and hash from a URL — canonical URLs must be clean.
+ */
+const toCanonicalUrl = (url = '') => {
+  try {
+    const u = new URL(url || window.location.href);
+    u.search = '';
+    u.hash = '';
+    return u.toString();
+  } catch {
+    return url;
+  }
+};
+
+/**
  * applySeoMeta — sets all important SEO meta tags and returns a cleanup fn.
+ *
  * @param {object} opts
  * @param {string} opts.title
  * @param {string} [opts.description]
- * @param {string} [opts.image]       - absolute image URL for OG/Twitter
- * @param {string} [opts.url]         - canonical URL (defaults to current href)
+ * @param {string} [opts.image]            absolute image URL for OG/Twitter
+ * @param {number} [opts.imageWidth]       OG image width (default 1200)
+ * @param {number} [opts.imageHeight]      OG image height (default 630)
+ * @param {string} [opts.url]              canonical URL (defaults to current href, query stripped)
  * @param {'website'|'article'} [opts.type]
- * @param {string} [opts.locale]      - e.g. 'hi_IN'
+ * @param {string} [opts.locale]           e.g. 'hi_IN'
+ * @param {string} [opts.publishedTime]    ISO string — article:published_time
+ * @param {string} [opts.modifiedTime]     ISO string — article:modified_time
+ * @param {string} [opts.author]           author name — article:author
+ * @param {string} [opts.section]          category name — article:section
+ * @param {string[]} [opts.tags]           tag list — article:tag
  */
 export const applySeoMeta = ({
   title = '',
   description = '',
   image = '',
+  imageWidth = 1200,
+  imageHeight = 630,
   url = '',
   type = 'website',
-  locale = 'hi_IN'
+  locale = 'hi_IN',
+  publishedTime = '',
+  modifiedTime = '',
+  author = '',
+  section = '',
+  tags = []
 } = {}) => {
   if (typeof document === 'undefined') return () => {};
 
-  const canonical = url || window.location.href;
+  const canonical = toCanonicalUrl(url || window.location.href);
   const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
 
   // Snapshot previous values for cleanup
@@ -207,9 +239,11 @@ export const applySeoMeta = ({
     twTitle: ensureMetaName('twitter:title').getAttribute('content') || '',
     twDesc: ensureMetaName('twitter:description').getAttribute('content') || '',
     twImage: ensureMetaName('twitter:image').getAttribute('content') || '',
+    twSite: ensureMetaName('twitter:site').getAttribute('content') || '',
+    hadArticleMeta: !!document.head.querySelector('meta[property="article:published_time"]'),
   };
 
-  // Apply
+  // ── Apply core tags ──────────────────────────────────────────────────────
   document.title = fullTitle;
   ensureMetaName('description').setAttribute('content', description);
   ensureLink('canonical', 'seo').setAttribute('href', canonical);
@@ -218,6 +252,8 @@ export const applySeoMeta = ({
   ensureMetaProp('og:title').setAttribute('content', fullTitle);
   ensureMetaProp('og:description').setAttribute('content', description);
   ensureMetaProp('og:image').setAttribute('content', image);
+  ensureMetaProp('og:image:width').setAttribute('content', String(imageWidth));
+  ensureMetaProp('og:image:height').setAttribute('content', String(imageHeight));
   ensureMetaProp('og:url').setAttribute('content', canonical);
   ensureMetaProp('og:type').setAttribute('content', type);
   ensureMetaProp('og:locale').setAttribute('content', locale);
@@ -228,8 +264,39 @@ export const applySeoMeta = ({
   ensureMetaName('twitter:title').setAttribute('content', fullTitle);
   ensureMetaName('twitter:description').setAttribute('content', description);
   ensureMetaName('twitter:image').setAttribute('content', image);
+  ensureMetaName('twitter:site').setAttribute('content', TWITTER_HANDLE);
 
-  // Cleanup fn
+  // ── Article-specific OG tags ─────────────────────────────────────────────
+  const articleTagEls = [];
+  if (type === 'article') {
+    if (publishedTime) {
+      ensureMetaProp('article:published_time').setAttribute('content', publishedTime);
+      articleTagEls.push('article:published_time');
+    }
+    if (modifiedTime) {
+      ensureMetaProp('article:modified_time').setAttribute('content', modifiedTime);
+      articleTagEls.push('article:modified_time');
+    }
+    if (author) {
+      ensureMetaProp('article:author').setAttribute('content', author);
+      articleTagEls.push('article:author');
+    }
+    if (section) {
+      ensureMetaProp('article:section').setAttribute('content', section);
+      articleTagEls.push('article:section');
+    }
+    // article:tag — one per tag
+    tags.forEach((tag) => {
+      const el = document.createElement('meta');
+      el.setAttribute('property', 'article:tag');
+      el.setAttribute('content', tag);
+      el.setAttribute('data-article-tag', 'true');
+      document.head.appendChild(el);
+      articleTagEls.push(el);
+    });
+  }
+
+  // Cleanup fn — restore previous values and remove article-specific metas
   return () => {
     document.title = prev.title;
     ensureMetaName('description').setAttribute('content', prev.description);
@@ -245,5 +312,14 @@ export const applySeoMeta = ({
     ensureMetaName('twitter:title').setAttribute('content', prev.twTitle);
     ensureMetaName('twitter:description').setAttribute('content', prev.twDesc);
     ensureMetaName('twitter:image').setAttribute('content', prev.twImage);
+    ensureMetaName('twitter:site').setAttribute('content', prev.twSite);
+
+    // Remove article-specific metas
+    if (!prev.hadArticleMeta) {
+      ['article:published_time', 'article:modified_time', 'article:author', 'article:section'].forEach(prop => {
+        removeMeta(`meta[property="${prop}"]`);
+      });
+    }
+    document.head.querySelectorAll('meta[data-article-tag="true"]').forEach(el => el.remove());
   };
 };

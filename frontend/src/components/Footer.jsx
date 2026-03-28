@@ -1,9 +1,36 @@
 import { useEffect, useState } from 'react';
-import { CATEGORIES_API_URL, navigateTo } from '../utils/news';
+import { CATEGORIES_API_URL, navigateTo, SITE_URL } from '../utils/news';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [categories, setCategories] = useState([]);
+
+  // ── Organization JSON-LD ──────────────────────────────────────────────
+  // Connects website to social profiles in Google Knowledge Graph
+  useEffect(() => {
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'New Bharat Digital',
+      url: SITE_URL,
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/news.webp` },
+      sameAs: [
+        'https://facebook.com/NewBharatDigital',
+        'https://twitter.com/NewBharatDigital',
+        'https://instagram.com/NewBharatDigital',
+        'https://youtube.com/@NewBharatDigital'
+      ]
+    };
+    let el = document.head.querySelector('script[data-type="org-jsonld"]');
+    if (!el) {
+      el = document.createElement('script');
+      el.setAttribute('type', 'application/ld+json');
+      el.setAttribute('data-type', 'org-jsonld');
+      document.head.appendChild(el);
+    }
+    el.textContent = JSON.stringify(jsonLd);
+    return () => { el?.remove(); };
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {

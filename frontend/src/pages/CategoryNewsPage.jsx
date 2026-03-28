@@ -4,8 +4,15 @@ import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
 import { applySeoMeta, NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
 
+const getQueryPage = () => {
+  const params = new URLSearchParams(window.location.search);
+  return Math.max(1, parseInt(params.get('page'), 10) || 1);
+};
+
 const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
+  const [page, setPage] = useState(getQueryPage);
   const [pageData, setPageData] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -16,8 +23,9 @@ const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
         setError('');
 
         const listingPath = subCategorySlug
-          ? `${NEWS_API_URL}/listing/${encodeURIComponent(categorySlug)}/${encodeURIComponent(subCategorySlug)}`
-          : `${NEWS_API_URL}/listing/${encodeURIComponent(categorySlug)}`;
+          ? `${NEWS_API_URL}/listing/${encodeURIComponent(categorySlug)}/${encodeURIComponent(subCategorySlug)}?page=${page}`
+          : `${NEWS_API_URL}/listing/${encodeURIComponent(categorySlug)}?page=${page}`;
+
 
         const response = await fetch(listingPath);
         const data = await response.json();
@@ -36,7 +44,26 @@ const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
     };
 
     fetchListing();
-  }, [categorySlug, subCategorySlug]);
+  }, [categorySlug, subCategorySlug, page]);
+
+  // Sync page state on popstate (browser back/forward)
+  useEffect(() => {
+    const onPopState = () => {
+      setPage(getQueryPage());
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('page', newPage);
+    window.history.pushState({}, '', newUrl);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+
 
   useEffect(() => {
     if (!pageData) {
@@ -156,6 +183,29 @@ const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
                       </a>
                     ))}
                   </div>
+                )}
+                
+                {/* Pagination */}
+                {pageData?.totalPages > 1 && (
+                  <nav aria-label="Category pages" className="flex justify-center items-center gap-2 mt-8 pt-4 border-t border-gray-100">
+                    <button
+                      onClick={() => handlePageChange(pageData.page - 1)}
+                      disabled={pageData.page <= 1}
+                      className="px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      ← Previous
+                    </button>
+                    <span className="text-sm text-gray-600">
+                      Page {pageData.page} of {pageData.totalPages}
+                    </span>
+                    <button
+                      onClick={() => handlePageChange(pageData.page + 1)}
+                      disabled={pageData.page >= pageData.totalPages}
+                      className="px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next →
+                    </button>
+                  </nav>
                 )}
               </section>
 

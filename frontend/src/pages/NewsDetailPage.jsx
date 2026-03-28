@@ -4,7 +4,9 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SocialBar from '../components/SocialBar';
 import CommentsSection from '../components/CommentsSection';
-import { applySeoMeta, NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl, linkifyHtml } from '../utils/news';
+import { applySeoMeta, NEWS_API_URL, SITE_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl, linkifyHtml } from '../utils/news';
+
+const stripHtml = (html = '') => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
 const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
   const [article, setArticle] = useState(null);
@@ -65,25 +67,34 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
     const imageUrl = article.featuredImage?.url
       ? resolveMediaUrl(article.featuredImage.url)
       : '';
-    const canonicalUrl = window.location.href;
+    const canonicalUrl = window.location.origin + window.location.pathname;
     const description = article.seo?.metaDescription || article.excerpt || '';
 
     const cleanup = applySeoMeta({
-      title: article.seo?.metaTitle || article.title,
+      title: article.seo?.metaTitle || article.hindiTitle || article.title,
       description,
       image: imageUrl,
+      imageWidth: 1200,
+      imageHeight: 630,
       url: canonicalUrl,
       type: 'article',
-      locale: 'hi_IN'
+      locale: 'hi_IN',
+      publishedTime: article.createdAt ? new Date(article.createdAt).toISOString() : '',
+      modifiedTime: article.updatedAt ? new Date(article.updatedAt).toISOString() : '',
+      author: article.author?.name || 'New Bharat Digital',
+      section: article.category?.name || '',
+      tags: Array.isArray(article.tags) ? article.tags : []
     });
 
-    // JSON-LD structured data
+    // ── JSON-LD NewsArticle Structured Data ─────────────────────────────────
+    const plainContent = stripHtml(article.content || '');
     const jsonLd = {
       '@context': 'https://schema.org',
       '@type': 'NewsArticle',
       headline: article.title,
       description,
       image: imageUrl ? [imageUrl] : [],
+      thumbnailUrl: imageUrl || undefined,
       datePublished: article.createdAt,
       dateModified: article.updatedAt || article.createdAt,
       author: article.author?.name
@@ -95,7 +106,11 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
         logo: { '@type': 'ImageObject', url: `${window.location.origin}/news.webp` }
       },
       mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
-      inLanguage: 'hi'
+      inLanguage: 'hi',
+      articleSection: article.category?.name || '',
+      keywords: Array.isArray(article.tags) ? article.tags.join(', ') : '',
+      wordCount: plainContent.split(/\s+/).filter(Boolean).length,
+      articleBody: plainContent.slice(0, 500),
     };
 
     let scriptEl = document.head.querySelector('script[data-type="news-jsonld"]');
@@ -123,6 +138,10 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
       : null,
     { label: article.title }
   ].filter(Boolean) : [];
+
+  const handleTagClick = (tag) => {
+    navigateTo(`/search?q=${encodeURIComponent(tag)}`);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -160,10 +179,15 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
               <article className="bg-white rounded-2xl shadow-sm overflow-hidden text-left">
                 {article.featuredImage?.url ? (
                   <div className="px-5 sm:px-8 pt-5 sm:pt-8">
+                    {/* fetchpriority=high tells browser to load the hero image first (improves LCP) */}
                     <img
                       src={resolveMediaUrl(article.featuredImage.url)}
                       alt={article.featuredImage.alt || article.title}
                       className="w-full aspect-[16/9] object-cover rounded-2xl"
+                      fetchpriority="high"
+                      width="1200"
+                      height="675"
+                      decoding="async"
                     />
                   </div>
                 ) : null}
@@ -174,15 +198,23 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                     <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 px-3 py-1 font-semibold">
                       {article.category?.name || 'News'}
                     </span>
-                    <span>{formatNewsDate(article.createdAt)}</span>
+                    <time dateTime={article.createdAt}>{formatNewsDate(article.createdAt)}</time>
                     {article.author?.name ? <span>By {article.author.name}</span> : null}
                   </div>
                   <h1
                     className="mt-4 text-xl sm:text-3xl font-bold tracking-tight text-gray-900 leading-tight"
                     style={article.hindiFont ? { fontFamily: `'${article.hindiFont}', sans-serif` } : undefined}
                   >
-                    {article.title}
+                    {article.hindiTitle || article.title}
                   </h1>
+                  {/* Excerpt / meta description shown below headline for users */}
+                  {article.excerpt ? (
+                    <p className="mt-3 text-base text-gray-600 leading-relaxed"
+                      style={article.hindiFont ? { fontFamily: `'${article.hindiFont}', sans-serif` } : undefined}
+                    >
+                      {article.excerpt}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="px-5 sm:px-8 pb-8">
@@ -192,7 +224,7 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                     dangerouslySetInnerHTML={{ __html: linkifyHtml(article.content) }}
                   />
 
-                  {/* Tags Section */}
+                  {/* Tags — now rendered as clickable links for SEO internal linking */}
                   {article.tags && article.tags.length > 0 && (
                     <div className="mt-8 mb-6 flex flex-wrap items-center gap-2">
                       <span className="text-sm font-semibold text-gray-700 mr-1 flex items-center">
@@ -202,12 +234,15 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                         Tags:
                       </span>
                       {article.tags.map((tag, index) => (
-                        <span
+                        <a
                           key={index}
-                          className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-md uppercase tracking-wider hover:bg-red-50 hover:text-red-600 transition-colors cursor-default"
+                          href={`/search?q=${encodeURIComponent(tag)}`}
+                          onClick={(e) => { e.preventDefault(); handleTagClick(tag); }}
+                          rel="tag"
+                          className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-md uppercase tracking-wider hover:bg-red-50 hover:text-red-600 transition-colors no-underline"
                         >
                           {tag}
-                        </span>
+                        </a>
                       ))}
                     </div>
                   )}
@@ -219,7 +254,7 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                     slug={article.slug}
                   />
 
-                  {/* Comment Section (handles anchor internally) */}
+                  {/* Comment Section */}
                   <CommentsSection slug={article.slug} />
                 </div>
               </article>
@@ -249,13 +284,16 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                               src={resolveMediaUrl(item.featuredImage.url)}
                               alt={item.featuredImage.alt || item.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                              width="96"
+                              height="72"
                             />
                           ) : null}
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 text-[11px] text-gray-500 mb-1">
                             <span className="font-semibold uppercase tracking-wide text-red-600">{item.category?.name || 'News'}</span>
-                            <span>{formatNewsDate(item.createdAt)}</span>
+                            <time dateTime={item.createdAt}>{formatNewsDate(item.createdAt)}</time>
                           </div>
                           <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
                             {item.title}

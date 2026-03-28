@@ -1,12 +1,16 @@
 User-agent: *
 Allow: /
 
-# Block admin panel
+# Block admin panel and API
 Disallow: /admin/
 Disallow: /api/
 
-# Crawl delay for polite crawling
-Crawl-delay: 1
+# Sitemaps (absolute URLs required)
+Sitemap: https://newbharatdigital.com/sitemap.xml
+Sitemap: https://newbharatdigital.com/sitemap-news.xml
 
-# Sitemap location
-Sitemap: /sitemap.xml
+# Google News bot (no crawl-delay — Google ignores it)
+User-agent: Googlebot-News
+Allow: /
+Disallow: /admin/
+Disallow: /api/

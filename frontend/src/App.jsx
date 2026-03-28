@@ -8,6 +8,7 @@ import NewsHome from './pages/NewsHome';
 import NewsDetailPage from './pages/NewsDetailPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
+import SearchPage from './pages/SearchPage';
 
 const getCurrentPath = () => window.location.pathname;
 
@@ -26,6 +27,11 @@ function App() {
   }, []);
 
   const pathSegments = pathname.split('/').filter(Boolean).map((segment) => decodeURIComponent(segment));
+
+  if (pathname === '/search' || pathname.startsWith('/search/')) {
+    return <SearchPage />;
+  }
+
   if (pathname === '/about') {
     return <About />;
   }
