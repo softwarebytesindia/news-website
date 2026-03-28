@@ -94,10 +94,18 @@ const SocialBar = ({ title = '', url = '', slug = '' }) => {
   }, [title, url]);
 
   const handleComment = useCallback(() => {
+    setRipple('comment');
+    setTimeout(() => setRipple(''), 400);
+
     // Scroll to bottom of article / comments section
     const target = document.getElementById('article-comments') || document.querySelector('.article-end');
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Look for a text input or textarea to focus
+      setTimeout(() => {
+        const input = target.querySelector('input[type="text"], textarea');
+        if (input) input.focus();
+      }, 500); // give time for scroll animation
     } else {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
