@@ -204,7 +204,7 @@ const frontendStaticPath = path.join(__dirname, '..', 'frontend', 'dist');
 app.use(express.static(frontendStaticPath, { index: false }));
 
 // Fallback all other routes to frontend's index.html to support React Router
-app.get('*', (req, res, next) => {
+app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/admin')) {
     return next();
   }
