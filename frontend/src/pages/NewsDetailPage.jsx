@@ -68,7 +68,8 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
       ? resolveMediaUrl(article.featuredImage.url)
       : '';
     const canonicalUrl = window.location.origin + window.location.pathname;
-    const description = article.seo?.metaDescription || article.excerpt || '';
+    const plainContent = stripHtml(article.content || '');
+    const description = article.seo?.metaDescription || article.excerpt || (plainContent.length > 160 ? plainContent.slice(0, 160) + '...' : plainContent);
 
     const cleanup = applySeoMeta({
       title: article.seo?.metaTitle || article.hindiTitle || article.title,
@@ -87,7 +88,6 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
     });
 
     // ── JSON-LD NewsArticle Structured Data ─────────────────────────────────
-    const plainContent = stripHtml(article.content || '');
     const jsonLd = {
       '@context': 'https://schema.org',
       '@type': 'NewsArticle',
@@ -207,6 +207,10 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                   >
                     {article.hindiTitle || article.title}
                   </h1>
+
+                  {/* Top Share Bar */}
+                  <TopShareBar title={article.title} url={typeof window !== 'undefined' ? window.location.href : ''} />
+
                   {/* Excerpt / meta description shown below headline for users */}
                   {article.excerpt ? (
                     <p className="mt-3 text-base text-gray-600 leading-relaxed"
@@ -215,9 +219,6 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                       {article.excerpt}
                     </p>
                   ) : null}
-
-                  {/* Top Share Bar */}
-                  <TopShareBar title={article.title} url={typeof window !== 'undefined' ? window.location.href : ''} />
                 </div>
 
                 <div className="px-5 sm:px-8 pb-8">

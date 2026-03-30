@@ -12,11 +12,12 @@ const POPULATE_OPTIONS = [
 const VALID_STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived'];
 const BREAKING_NEWS_LIMIT = 4;
 
-const { slugify: transliterateSlugify } = require('transliteration');
-
 const slugify = (value = '') => {
-  let slug = transliterateSlugify(value, { lowercase: true, separator: '-' });
-  slug = slug.replace(/[^a-z0-9\-]+/g, '').replace(/^-+|-+$/g, '').replace(/-{2,}/g, '-');
+  let slug = value.toString().trim().toLowerCase();
+  slug = slug.replace(/[\s_]+/g, '-');
+  slug = slug.replace(/[^a-z0-9\-\u0900-\u097F]+/g, '');
+  slug = slug.replace(/-{2,}/g, '-');
+  slug = slug.replace(/^-+|-+$/g, '');
   
   // Enforce non-numeric strictly: if it's empty or entirely numbers/hyphens, prepend 'post-'
   if (!slug || /^[\d\-]+$/.test(slug)) {

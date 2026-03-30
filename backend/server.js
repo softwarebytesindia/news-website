@@ -117,7 +117,8 @@ app.use(async (req, res, next) => {
 
       if (article) {
         title = article.seo?.metaTitle || article.title || article.hindiTitle || title;
-        description = article.seo?.metaDescription || article.excerpt || stripHtml(article.content || '').slice(0, 160) || description;
+        const plainContent = stripHtml(article.content || '');
+        description = article.seo?.metaDescription || article.excerpt || (plainContent.length > 160 ? plainContent.slice(0, 160) + '...' : plainContent) || description;
         image = article.featuredImage?.url
           ? (article.featuredImage.url.startsWith('http') ? article.featuredImage.url : `${SITE_URL}${article.featuredImage.url}`)
           : image;
@@ -165,8 +166,13 @@ app.use(async (req, res, next) => {
   <meta name="twitter:description" content="${escapeHtml(description)}" />
   <meta name="twitter:image" content="${escapeHtml(image)}" />${articleMeta}`;
 
-    // Inject into <head> — replace existing title if present
-    let html = baseHtml.replace(/<title>[^<]*<\/title>/, '').replace('</head>', `${injectedMeta}\n</head>`);
+    // Inject into <head> — strip generic duplicate SEO tags to prioritize dynamic tags
+    let html = baseHtml
+      .replace(/<title>[^<]*<\/title>/gi, '')
+      .replace(/<meta[^>]+name="description"[^>]*>/gi, '')
+      .replace(/<meta[^>]+property="og:[a-z_]+"[^>]*>/gi, '')
+      .replace(/<meta[^>]+name="twitter:[a-z_]+"[^>]*>/gi, '')
+      .replace('</head>', `${injectedMeta}\n</head>`);
 
     res.setHeader('Content-Type', 'text/html; charset=UTF-8');
     res.setHeader('Cache-Control', 'public, max-age=300'); // 5 min for bots
