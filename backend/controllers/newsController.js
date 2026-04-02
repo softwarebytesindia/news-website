@@ -12,10 +12,12 @@ const POPULATE_OPTIONS = [
 const VALID_STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived'];
 const BREAKING_NEWS_LIMIT = 4;
 
+const { transliterate } = require('transliteration');
+
 const slugify = (value = '') => {
-  let slug = value.toString().trim().toLowerCase();
+  let slug = transliterate(value.toString().trim()).toLowerCase();
   slug = slug.replace(/[\s_]+/g, '-');
-  slug = slug.replace(/[^a-z0-9\-\u0900-\u097F]+/g, '');
+  slug = slug.replace(/[^a-z0-9\-]+/g, '');
   slug = slug.replace(/-{2,}/g, '-');
   slug = slug.replace(/^-+|-+$/g, '');
   
