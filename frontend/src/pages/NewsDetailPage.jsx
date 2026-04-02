@@ -210,15 +210,6 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
 
                   {/* Top Share Bar */}
                   <TopShareBar title={article.title} url={typeof window !== 'undefined' ? window.location.href : ''} />
-
-                  {/* Excerpt / meta description shown below headline for users */}
-                  {article.excerpt ? (
-                    <p className="mt-3 text-base text-gray-600 leading-relaxed"
-                      style={article.hindiFont ? { fontFamily: `'${article.hindiFont}', sans-serif` } : undefined}
-                    >
-                      {article.excerpt}
-                    </p>
-                  ) : null}
                 </div>
 
                 <div className="px-5 sm:px-8 pb-8">
