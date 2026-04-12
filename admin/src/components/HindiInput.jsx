@@ -53,6 +53,22 @@ const TOOLBAR_ITEMS = [
 ];
 
 /* ─── SVG Icons ─── */
+const UndoIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="1 4 1 10 7 10" />
+    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+  </svg>
+);
+
+const RedoIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 4 23 10 17 10" />
+    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+  </svg>
+);
+
 const ImgIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -467,6 +483,36 @@ const RichEditor = ({ value, onChange, placeholder, fontFamily, className }) => 
     <div className="hi-rich-wrapper">
       {/* ─── Toolbar ─── */}
       <div className="hi-toolbar">
+        {/* ─── Undo / Redo ─── */}
+        <button
+          type="button"
+          title="Undo (Ctrl+Z)"
+          className="hi-toolbar-btn hi-undo-redo-btn"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            editorRef.current?.focus();
+            document.execCommand('undo', false, null);
+            emitChange();
+          }}
+        >
+          <UndoIcon />
+        </button>
+        <button
+          type="button"
+          title="Redo (Ctrl+Y)"
+          className="hi-toolbar-btn hi-undo-redo-btn"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            editorRef.current?.focus();
+            document.execCommand('redo', false, null);
+            emitChange();
+          }}
+        >
+          <RedoIcon />
+        </button>
+
+        <span className="wp-toolbar-divider" />
+
         {TOOLBAR_ITEMS.map((item, i) =>
           item === 'divider' || item === 'divider-align' ? (
             <span key={i} className="wp-toolbar-divider" />
