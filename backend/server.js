@@ -110,15 +110,25 @@ app.use(async (req, res, next) => {
 
     // Article page: /category/slug OR /category/sub/slug
     if (segments.length === 2 || segments.length === 3) {
-      const slug = segments[segments.length - 1];
+      const slug = segments[segments.length - 1].toLowerCase();
       const article = await News.findOne({ slug, status: 'published' })
         .populate([{ path: 'category' }, { path: 'subCategory', select: 'name slug' }, { path: 'author', select: 'name' }])
-        .select('title excerpt seo featuredImage category subCategory author createdAt updatedAt tags hindiTitle');
+        .select('title hindiTitle excerpt hindiExcerpt content hindiContent seo featuredImage category subCategory author createdAt updatedAt tags');
 
       if (article) {
-        title = article.seo?.metaTitle || article.title || article.hindiTitle || title;
-        const plainContent = stripHtml(article.content || '');
-        description = article.seo?.metaDescription || article.excerpt || (plainContent.length > 160 ? plainContent.slice(0, 160) + '...' : plainContent) || description;
+        title = article.seo?.metaTitle || article.hindiTitle || article.title || title;
+        
+        // Build description: SEO Meta > Hindi Excerpt > English Excerpt > Truncated Content
+        const plainHindi = stripHtml(article.hindiContent || '');
+        const plainEng = stripHtml(article.content || '');
+        const fallbackDesc = plainHindi.length > 50 ? plainHindi : plainEng;
+        
+        description = article.seo?.metaDescription || 
+                      article.hindiExcerpt || 
+                      article.excerpt || 
+                      (fallbackDesc.length > 180 ? fallbackDesc.slice(0, 180) + '...' : fallbackDesc) || 
+                      description;
+
         image = article.featuredImage?.url
           ? (article.featuredImage.url.startsWith('http') ? article.featuredImage.url : `${SITE_URL}${article.featuredImage.url}`)
           : image;
@@ -167,11 +177,12 @@ app.use(async (req, res, next) => {
   <meta name="twitter:image" content="${escapeHtml(image)}" />${articleMeta}`;
 
     // Inject into <head> — strip generic duplicate SEO tags to prioritize dynamic tags
+    // Use [\s\S]*? to handle multiline tags in index.html
     let html = baseHtml
-      .replace(/<title>[^<]*<\/title>/gi, '')
-      .replace(/<meta[^>]+name="description"[^>]*>/gi, '')
-      .replace(/<meta[^>]+property="og:[a-z_]+"[^>]*>/gi, '')
-      .replace(/<meta[^>]+name="twitter:[a-z_]+"[^>]*>/gi, '')
+      .replace(/<title>[\s\S]*?<\/title>/gi, '')
+      .replace(/<meta[^>]*?name="description"[\s\S]*?>/gi, '')
+      .replace(/<meta[^>]*?property="og:[^"]+"[\s\S]*?>/gi, '')
+      .replace(/<meta[^>]*?name="twitter:[^"]+"[\s\S]*?>/gi, '')
       .replace('</head>', `${injectedMeta}\n</head>`);
 
     res.setHeader('Content-Type', 'text/html; charset=UTF-8');
