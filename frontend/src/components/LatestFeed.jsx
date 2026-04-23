@@ -1,4 +1,4 @@
-import { formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
+import { formatNewsDate, getFeaturedImageUrl, getNewsPath, getNewsSummary, navigateTo, useFeaturedImageFallback } from '../utils/news';
 
 const LatestFeed = ({ articles, loading, error }) => (
   <section>
@@ -37,10 +37,11 @@ const LatestFeed = ({ articles, loading, error }) => (
             className="no-underline bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 w-full"
           >
             <div className="relative w-20 h-14 sm:w-24 sm:h-16 flex-shrink-0 overflow-hidden bg-gray-100">
-              {article.featuredImage?.url ? (
+              {article.featuredImage?.url || article.featuredImage?.jpgUrl ? (
                 <img
-                  src={resolveMediaUrl(article.featuredImage.url)}
+                  src={getFeaturedImageUrl(article)}
                   alt={article.featuredImage.alt || article.title}
+                  onError={(event) => useFeaturedImageFallback(event, article)}
                   className="w-full h-full object-cover"
                 />
               ) : null}

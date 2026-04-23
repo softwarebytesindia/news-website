@@ -33,26 +33,49 @@ const uploadImage = async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}.avif`;
-    const outputPath = path.join(UPLOADS_DIR, filename);
+    const basename = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const avifFilename = `${basename}.avif`;
+    const jpgFilename = `${basename}.jpg`;
+    const avifOutputPath = path.join(UPLOADS_DIR, avifFilename);
+    const jpgOutputPath = path.join(UPLOADS_DIR, jpgFilename);
 
-    await sharp(req.file.buffer)
-      .rotate()
-      .resize({
-        width: 1920,
-        height: 1920,
-        fit: 'inside',
-        withoutEnlargement: true
-      })
-      .avif({
-        quality: 55,
-        effort: 6
-      })
-      .toFile(outputPath);
+    const image = sharp(req.file.buffer).rotate();
+
+    await Promise.all([
+      image
+        .clone()
+        .resize({
+          width: 1920,
+          height: 1920,
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+        .avif({
+          quality: 55,
+          effort: 6
+        })
+        .toFile(avifOutputPath),
+      image
+        .clone()
+        .resize({
+          width: 1200,
+          height: 630,
+          fit: 'cover',
+          position: 'center'
+        })
+        .jpeg({
+          quality: 65,
+          progressive: true,
+          mozjpeg: true
+        })
+        .toFile(jpgOutputPath)
+    ]);
 
     res.status(200).json({
       message: 'File uploaded and optimized successfully',
-      filePath: `/uploads/${filename}`
+      filePath: `/uploads/${avifFilename}`,
+      avifPath: `/uploads/${avifFilename}`,
+      jpgPath: `/uploads/${jpgFilename}`
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

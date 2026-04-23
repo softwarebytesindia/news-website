@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SocialBar, { TopShareBar } from '../components/SocialBar';
 import CommentsSection from '../components/CommentsSection';
-import { applySeoMeta, NEWS_API_URL, SITE_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl, linkifyHtml } from '../utils/news';
+import { applySeoMeta, NEWS_API_URL, formatNewsDate, getFeaturedImageJpgUrl, getFeaturedImageUrl, getNewsPath, getNewsSummary, navigateTo, useFeaturedImageFallback, linkifyHtml } from '../utils/news';
 
 const stripHtml = (html = '') => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -64,9 +64,7 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
       return undefined;
     }
 
-    const imageUrl = article.featuredImage?.url
-      ? resolveMediaUrl(article.featuredImage.url)
-      : '';
+    const imageUrl = getFeaturedImageJpgUrl(article) || getFeaturedImageUrl(article);
     const canonicalUrl = window.location.origin + window.location.pathname;
     const plainContent = stripHtml(article.content || '');
     const description = article.seo?.metaDescription || article.excerpt || (plainContent.length > 160 ? plainContent.slice(0, 160) + '...' : plainContent);
@@ -177,12 +175,13 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
           ) : article ? (
             <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.7fr)_360px] gap-8 items-start">
               <article className="bg-white rounded-2xl shadow-sm overflow-hidden text-left">
-                {article.featuredImage?.url ? (
+                {article.featuredImage?.url || article.featuredImage?.jpgUrl ? (
                   <div className="px-5 sm:px-8 pt-5 sm:pt-8">
                     {/* fetchpriority=high tells browser to load the hero image first (improves LCP) */}
                     <img
-                      src={resolveMediaUrl(article.featuredImage.url)}
+                      src={getFeaturedImageUrl(article)}
                       alt={article.featuredImage.alt || article.title}
+                      onError={(event) => useFeaturedImageFallback(event, article)}
                       className="w-full aspect-[16/9] object-cover rounded-2xl"
                       fetchpriority="high"
                       width="1200"
@@ -274,10 +273,11 @@ const NewsDetailPage = ({ categorySlug, subCategorySlug = null, slug }) => {
                         className="group no-underline flex items-start gap-3 border-b border-gray-100 pb-4 last:border-b-0 last:pb-0"
                       >
                         <div className="w-24 h-18 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                          {item.featuredImage?.url ? (
+                          {item.featuredImage?.url || item.featuredImage?.jpgUrl ? (
                             <img
-                              src={resolveMediaUrl(item.featuredImage.url)}
+                              src={getFeaturedImageUrl(item)}
                               alt={item.featuredImage.alt || item.title}
+                              onError={(event) => useFeaturedImageFallback(event, item)}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               loading="lazy"
                               width="96"

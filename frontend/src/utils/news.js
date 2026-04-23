@@ -15,6 +15,37 @@ export const resolveMediaUrl = (url) => {
   return url.startsWith('/') ? `${MEDIA_BASE_URL}${url}` : `${MEDIA_BASE_URL}/${url}`;
 };
 
+const deriveSocialJpgPath = (url = '') => {
+  const raw = String(url || '').trim();
+  const match = raw.match(/^(.*\/uploads\/)([^/?#/.]+)\.[^/?#]+([?#].*)?$/i);
+  if (!match) return '';
+  return `${match[1]}social/${match[2]}.jpg`;
+};
+
+export const getFeaturedImageUrl = (article) => (
+  article?.featuredImage?.url
+    ? resolveMediaUrl(article.featuredImage.url)
+    : resolveMediaUrl(article?.featuredImage?.jpgUrl || '')
+);
+
+export const getFeaturedImageJpgUrl = (article) => {
+  if (article?.featuredImage?.jpgUrl) {
+    return resolveMediaUrl(article.featuredImage.jpgUrl);
+  }
+
+  const derivedPath = deriveSocialJpgPath(article?.featuredImage?.url || '');
+  return derivedPath ? resolveMediaUrl(derivedPath) : '';
+};
+
+export const useFeaturedImageFallback = (event, article) => {
+  const fallbackUrl = getFeaturedImageJpgUrl(article);
+  if (!fallbackUrl || event.currentTarget.src === fallbackUrl) {
+    return;
+  }
+
+  event.currentTarget.src = fallbackUrl;
+};
+
 export const formatNewsDate = (value) => {
   if (!value) return '';
 

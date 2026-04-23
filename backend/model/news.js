@@ -31,6 +31,7 @@ const newsSchema = new mongoose.Schema(
     },
     featuredImage: {
       url: { type: String, trim: true, default: '' },
+      jpgUrl: { type: String, trim: true, default: '' },
       alt: { type: String, trim: true, default: '' }
     },
     category: {

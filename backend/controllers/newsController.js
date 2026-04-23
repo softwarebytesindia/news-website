@@ -138,6 +138,9 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
   const featuredImageUrl = typeof featuredImageInput.url === 'string'
     ? featuredImageInput.url.trim()
     : imageFallback || existingFeaturedImage.url || '';
+  const featuredImageJpgUrl = typeof featuredImageInput.jpgUrl === 'string'
+    ? featuredImageInput.jpgUrl.trim()
+    : existingFeaturedImage.jpgUrl || '';
 
   const seoInput = input.seo || {};
   const existingSeo = existingNews?.seo || {};
@@ -167,6 +170,7 @@ const buildNewsPayload = async (input = {}, existingNews = null) => {
     content,
     featuredImage: {
       url: featuredImageUrl,
+      jpgUrl: featuredImageJpgUrl,
       alt: typeof featuredImageInput.alt === 'string' ? featuredImageInput.alt.trim() : (existingFeaturedImage.alt || title)
     },
     category,

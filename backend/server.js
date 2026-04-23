@@ -4,7 +4,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
 const newsRoutes = require('./routes/newsRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
@@ -77,6 +79,8 @@ const escapeHtml = (str = '') =>
     .replace(/"/g, '&quot;');
 
 const stripHtml = (html = '') => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const SOCIAL_UPLOADS_DIR = path.join(UPLOADS_DIR, 'social');
 
 const getPublicOrigin = (req) => {
   const forwardedHost = req.get('x-forwarded-host');
@@ -119,9 +123,29 @@ const getImageMimeType = (url = '') => {
   return 'image/webp';
 };
 
+const toSocialImageUrl = (imageUrl = '', origin = SITE_URL) => {
+  const raw = String(imageUrl || '').trim();
+  if (!raw) return '';
+
+  const pathname = (() => {
+    try {
+      return new URL(raw, origin).pathname;
+    } catch {
+      return raw;
+    }
+  })();
+
+  const match = pathname.match(/^\/uploads\/([^/]+)$/);
+  if (!match) {
+    return resolvePublicUrl(raw, origin);
+  }
+
+  const baseName = path.parse(match[1]).name;
+  return resolvePublicUrl(`/uploads/social/${baseName}.jpg`, origin);
+};
+
 const resolveFrontendHtml = () => {
   try {
-    const fs = require('fs');
     const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist', 'index.html');
     if (fs.existsSync(frontendDistPath)) {
       return fs.readFileSync(frontendDistPath, 'utf8');
@@ -176,7 +200,11 @@ app.use(async (req, res, next) => {
                       (fallbackDesc.length > 180 ? fallbackDesc.slice(0, 180) + '...' : fallbackDesc) || 
                       description;
 
-        image = resolvePublicUrl(article.featuredImage?.url || '/news.webp', publicOrigin);
+        image = article.featuredImage?.jpgUrl
+          ? resolvePublicUrl(article.featuredImage.jpgUrl, publicOrigin)
+          : article.featuredImage?.url
+          ? toSocialImageUrl(article.featuredImage.url, publicOrigin)
+          : resolvePublicUrl('/news.webp', publicOrigin);
         type = 'article';
         publishedTime = article.createdAt ? new Date(article.createdAt).toISOString() : '';
         modifiedTime = article.updatedAt ? new Date(article.updatedAt).toISOString() : '';
@@ -253,6 +281,56 @@ app.use('/api/subcategories', subCategoryRoutes);
 app.use('/api/authors', authorRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/search', searchRoutes);
+
+app.get('/uploads/social/:filename', async (req, res, next) => {
+  try {
+    const requestedName = path.basename(req.params.filename || '');
+    const requestedBase = path.parse(requestedName).name;
+
+    if (!requestedBase || path.extname(requestedName).toLowerCase() !== '.jpg') {
+      return next();
+    }
+
+    if (!fs.existsSync(SOCIAL_UPLOADS_DIR)) {
+      fs.mkdirSync(SOCIAL_UPLOADS_DIR, { recursive: true });
+    }
+
+    const cachedPath = path.join(SOCIAL_UPLOADS_DIR, `${requestedBase}.jpg`);
+    if (fs.existsSync(cachedPath)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+      return res.type('jpeg').sendFile(cachedPath);
+    }
+
+    const sourceFile = fs
+      .readdirSync(UPLOADS_DIR, { withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .find((file) => path.parse(file).name === requestedBase);
+
+    if (!sourceFile) {
+      return next();
+    }
+
+    const sourcePath = path.join(UPLOADS_DIR, sourceFile);
+    await sharp(sourcePath)
+      .rotate()
+      .resize(1200, 630, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .jpeg({
+        quality: 82,
+        progressive: true
+      })
+      .toFile(cachedPath);
+
+    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    return res.type('jpeg').sendFile(cachedPath);
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   maxAge: '30d', // Cache uploads for 30 days
   immutable: true
