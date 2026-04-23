@@ -92,7 +92,9 @@ const getPublicOrigin = (req) => {
 
   const forwardedProto = req.get('x-forwarded-proto');
   const protocol = forwardedProto ? forwardedProto.split(',')[0].trim() : req.protocol;
-  return `${protocol || 'https'}://${host}`.replace(/\/+$/, '');
+  // Always prefer https for social sharing if not localhost
+  const finalProtocol = (protocol === 'http' && !/localhost|127\.0\.0\.1/i.test(host)) ? 'https' : protocol;
+  return `${finalProtocol || 'https'}://${host}`.replace(/\/+$/, '');
 };
 
 const resolvePublicUrl = (value = '', origin = SITE_URL) => {
@@ -199,6 +201,10 @@ app.use(async (req, res, next) => {
                       article.excerpt || 
                       (fallbackDesc.length > 180 ? fallbackDesc.slice(0, 180) + '...' : fallbackDesc) || 
                       description;
+
+        // Decode HTML entities to avoid &amp;nbsp; in WhatsApp description
+        const unescapeHtmlEntities = (str) => String(str).replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+        description = unescapeHtmlEntities(description);
 
         image = article.featuredImage?.jpgUrl
           ? resolvePublicUrl(article.featuredImage.jpgUrl, publicOrigin)
