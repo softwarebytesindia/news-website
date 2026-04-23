@@ -1,16 +1,18 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export const PUBLIC_SITE_URL = (import.meta.env.VITE_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://newsdigitalbharat.com')).replace(/\/+$/, '');
+export const MEDIA_BASE_URL = (import.meta.env.VITE_MEDIA_BASE_URL || API_BASE_URL).replace(/\/+$/, '');
 
 export const NEWS_API_URL = `${API_BASE_URL}/api/news`;
 export const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories`;
 export const SEARCH_API_URL = `${API_BASE_URL}/api/search`;
 export const SITE_NAME = 'New Bharat Digital';
-export const SITE_URL = window.location.origin;
+export const SITE_URL = PUBLIC_SITE_URL;
 export const TWITTER_HANDLE = '@NewBharatDigital'; // Update to your actual handle
 
 export const resolveMediaUrl = (url) => {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
-  return url.startsWith('/') ? `${API_BASE_URL}${url}` : `${API_BASE_URL}/${url}`;
+  return url.startsWith('/') ? `${MEDIA_BASE_URL}${url}` : `${MEDIA_BASE_URL}/${url}`;
 };
 
 export const formatNewsDate = (value) => {

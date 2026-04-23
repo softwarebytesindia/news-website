@@ -17,13 +17,18 @@ const searchRoutes = require('./routes/searchRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/newsdb';
-const SITE_URL = process.env.SITE_URL || 'https://newbharatdigital.com';
+const SITE_URL = (process.env.PUBLIC_SITE_URL || process.env.SITE_URL || 'https://newsdigitalbharat.com').replace(/\/+$/, '');
+
+app.set('trust proxy', true);
 
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5175',
+  'https://newsdigitalbharat.com',
+  'https://www.newsdigitalbharat.com',
   'https://newbharatdigital.com',
+  'https://www.newbharatdigital.com',
   'https://adm.newbharatdigital.com'
 ];
 
@@ -73,6 +78,47 @@ const escapeHtml = (str = '') =>
 
 const stripHtml = (html = '') => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
+const getPublicOrigin = (req) => {
+  const forwardedHost = req.get('x-forwarded-host');
+  const host = forwardedHost ? forwardedHost.split(',')[0].trim() : req.get('host');
+
+  if (!host || /localhost|127\.0\.0\.1/i.test(host)) {
+    return SITE_URL;
+  }
+
+  const forwardedProto = req.get('x-forwarded-proto');
+  const protocol = forwardedProto ? forwardedProto.split(',')[0].trim() : req.protocol;
+  return `${protocol || 'https'}://${host}`.replace(/\/+$/, '');
+};
+
+const resolvePublicUrl = (value = '', origin = SITE_URL) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  if (/^https?:\/\//i.test(raw)) {
+    return raw;
+  }
+
+  const normalizedPath = raw.startsWith('/') ? raw : `/${raw}`;
+  return `${origin}${normalizedPath}`;
+};
+
+const getImageMimeType = (url = '') => {
+  const pathname = (() => {
+    try {
+      return new URL(url).pathname;
+    } catch {
+      return String(url);
+    }
+  })().toLowerCase();
+
+  if (pathname.endsWith('.jpg') || pathname.endsWith('.jpeg')) return 'image/jpeg';
+  if (pathname.endsWith('.png')) return 'image/png';
+  if (pathname.endsWith('.gif')) return 'image/gif';
+  if (pathname.endsWith('.avif')) return 'image/avif';
+  return 'image/webp';
+};
+
 const resolveFrontendHtml = () => {
   try {
     const fs = require('fs');
@@ -99,9 +145,10 @@ app.use(async (req, res, next) => {
     const segments = req.path.split('/').filter(Boolean).map(s => decodeURIComponent(s));
     let title = 'New Bharat Digital — ताजा हिंदी समाचार';
     let description = 'ताजा खबरें, ब्रेकिंग न्यूज़ और सभी प्रमुख श्रेणियों की हिंदी समाचार अपडेट पढ़ें।';
-    let image = `${SITE_URL}/news.webp`;
+    const publicOrigin = getPublicOrigin(req);
+    let image = resolvePublicUrl('/news.webp', publicOrigin);
     let type = 'website';
-    let canonical = `${SITE_URL}${req.path}`;
+    let canonical = resolvePublicUrl(req.path, publicOrigin);
     let publishedTime = '';
     let modifiedTime = '';
     let articleAuthor = '';
@@ -129,9 +176,7 @@ app.use(async (req, res, next) => {
                       (fallbackDesc.length > 180 ? fallbackDesc.slice(0, 180) + '...' : fallbackDesc) || 
                       description;
 
-        image = article.featuredImage?.url
-          ? (article.featuredImage.url.startsWith('http') ? article.featuredImage.url : `${SITE_URL}${article.featuredImage.url}`)
-          : image;
+        image = resolvePublicUrl(article.featuredImage?.url || '/news.webp', publicOrigin);
         type = 'article';
         publishedTime = article.createdAt ? new Date(article.createdAt).toISOString() : '';
         modifiedTime = article.updatedAt ? new Date(article.updatedAt).toISOString() : '';
@@ -165,6 +210,9 @@ app.use(async (req, res, next) => {
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
   <meta property="og:image" content="${escapeHtml(image)}" />
+  <meta property="og:image:secure_url" content="${escapeHtml(image)}" />
+  <meta property="og:image:type" content="${escapeHtml(getImageMimeType(image))}" />
+  <meta property="og:image:alt" content="${escapeHtml(title)}" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:url" content="${escapeHtml(canonical)}" />
