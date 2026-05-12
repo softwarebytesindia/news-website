@@ -94,17 +94,21 @@ app.use(async (req, res, next) => {
 
       if (article) {
         const title = article.hindiTitle || article.title;
-        const desc = article.excerpt || 'ताजा खबरें और ब्रेकिंग न्यूज़';
+        const desc = article.excerpt || 'ताजा खबरें, ब्रेकिंग न्यूज़ और सभी प्रमुख श्रेणियों की हिंदी समाचार अपडेट पढ़ें।';
         
         // Priority: jpgUrl > url > default logo
         const rawImageUrl = article.featuredImage?.jpgUrl || article.featuredImage?.url || '/news.webp';
-        const image = rawImageUrl.startsWith('http') ? rawImageUrl : `${publicOrigin}${rawImageUrl.startsWith('/') ? '' : '/'}${rawImageUrl}`;
+        let image = rawImageUrl.startsWith('http') ? rawImageUrl : `${publicOrigin}${rawImageUrl.startsWith('/') ? '' : '/'}${rawImageUrl}`;
+        
+        // WhatsApp is picky about https and absolute URLs
+        if (image.startsWith('//')) image = `https:${image}`;
         
         const isJpg = image.toLowerCase().endsWith('.jpg') || image.toLowerCase().endsWith('.jpeg');
         const mimeType = isJpg ? 'image/jpeg' : 'image/webp';
 
         const metaTags = `
   <title>${title}</title>
+  <meta name="description" content="${desc}" />
   <meta property="og:title" content="${title}" />
   <meta property="og:description" content="${desc}" />
   <meta property="og:image" content="${image}" />
@@ -113,16 +117,25 @@ app.use(async (req, res, next) => {
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:url" content="${publicOrigin}${req.path}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="New Bharat Digital" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${title}" />
   <meta name="twitter:description" content="${desc}" />
-  <meta name="twitter:image" content="${image}" />`;
+  <meta name="twitter:image" content="${image}" />
+  <meta itemprop="name" content="${title}" />
+  <meta itemprop="description" content="${desc}" />
+  <meta itemprop="image" content="${image}" />`;
 
-        // Inject into top of head for best compatibility
+        // Inject into top of head, replacing existing relevant tags
         html = html.replace(/<title>.*?<\/title>/gi, '')
+                   .replace(/<meta name="description".*?>/gi, '')
                    .replace(/<meta property="og:title".*?>/gi, '')
                    .replace(/<meta property="og:description".*?>/gi, '')
                    .replace(/<meta property="og:image".*?>/gi, '')
+                   .replace(/<meta property="og:url".*?>/gi, '')
+                   .replace(/<meta property="og:type".*?>/gi, '')
+                   .replace(/<meta name="twitter:.*?">/gi, '')
                    .replace('<head>', `<head>\n${metaTags}`);
       }
     }
