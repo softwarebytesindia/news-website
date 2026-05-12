@@ -6,7 +6,6 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const fs = require('fs');
 const path = require('path');
-const sharp = require('sharp');
 
 const newsRoutes = require('./routes/newsRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
@@ -15,6 +14,8 @@ const authorRoutes = require('./routes/authorRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const sitemapRoutes = require('./routes/sitemapRoutes');
 const searchRoutes = require('./routes/searchRoutes');
+
+const News = require('./model/news');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -61,223 +62,62 @@ mongoose.connect(MONGODB_URL)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log(err));
 
-// ── Bot Prerender Middleware ──────────────────────────────────────────────────
-// Injects populated meta tags into the HTML shell for search crawlers and
-// social share bots (WhatsApp, Facebook, Twitter, Googlebot) that don't
-// execute JavaScript. This is the critical fix for a React SPA news site.
-const News = require('./model/news');
-const NewsCategory = require('./model/newsCategory');
-const SubCategory = require('./model/subCategory');
+// ── Sitemap Routes ────────────────────────────────────────────────────────────
+app.use('/', sitemapRoutes);
 
-const BOT_UA_REGEX = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|whatsapp|linkedinbot|applebot|rogerbot|embedly|quora|pinterest|slackbot|vkshare|facebot|telegrambot|discordbot|redditbot|ahrefsbot|semrushbot/i;
-
-const escapeHtml = (str = '') =>
-  String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-
-const stripHtml = (html = '') => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-const SOCIAL_UPLOADS_DIR = path.join(UPLOADS_DIR, 'social');
-
-const getPublicOrigin = (req) => {
-  const forwardedHost = req.get('x-forwarded-host');
-  const host = forwardedHost ? forwardedHost.split(',')[0].trim() : req.get('host');
-
-  if (!host || /localhost|127\.0\.0\.1/i.test(host)) {
-    return SITE_URL;
-  }
-
-  const forwardedProto = req.get('x-forwarded-proto');
-  const protocol = forwardedProto ? forwardedProto.split(',')[0].trim() : req.protocol;
-  // Always prefer https for social sharing if not localhost
-  const finalProtocol = (protocol === 'http' && !/localhost|127\.0\.0\.1/i.test(host)) ? 'https' : protocol;
-  return `${finalProtocol || 'https'}://${host}`.replace(/\/+$/, '');
-};
-
-const resolvePublicUrl = (value = '', origin = SITE_URL) => {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-
-  if (/^https?:\/\//i.test(raw)) {
-    return raw;
-  }
-
-  const normalizedPath = raw.startsWith('/') ? raw : `/${raw}`;
-  return `${origin}${normalizedPath}`;
-};
-
-const getImageMimeType = (url = '') => {
-  const pathname = (() => {
-    try {
-      return new URL(url).pathname;
-    } catch {
-      return String(url);
-    }
-  })().toLowerCase();
-
-  if (pathname.endsWith('.jpg') || pathname.endsWith('.jpeg')) return 'image/jpeg';
-  if (pathname.endsWith('.png')) return 'image/png';
-  if (pathname.endsWith('.gif')) return 'image/gif';
-  if (pathname.endsWith('.avif')) return 'image/avif';
-  return 'image/webp';
-};
-
-const toSocialImageUrl = (imageUrl = '', origin = SITE_URL) => {
-  const raw = String(imageUrl || '').trim();
-  if (!raw) return '';
-
-  const pathname = (() => {
-    try {
-      return new URL(raw, origin).pathname;
-    } catch {
-      return raw;
-    }
-  })();
-
-  const match = pathname.match(/^\/uploads\/([^/]+)$/);
-  if (!match) {
-    return resolvePublicUrl(raw, origin);
-  }
-
-  const baseName = path.parse(match[1]).name;
-  return resolvePublicUrl(`/uploads/social/${baseName}.jpg`, origin);
-};
-
-const resolveFrontendHtml = () => {
-  try {
-    const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist', 'index.html');
-    if (fs.existsSync(frontendDistPath)) {
-      return fs.readFileSync(frontendDistPath, 'utf8');
-    }
-  } catch { /* ignore */ }
-  return null;
-};
+// ── Minimal Meta-Tag Injector for Social Bots (WhatsApp/Facebook) ────────────
+const BOT_UA_REGEX = /facebookexternalhit|twitterbot|whatsapp|linkedinbot|applebot|discordbot|redditbot|slackbot|telegrambot/i;
 
 app.use(async (req, res, next) => {
   const ua = req.get('User-Agent') || '';
+  if (!BOT_UA_REGEX.test(ua) || req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/admin')) {
+    return next();
+  }
 
-  // Only prerender for bots, skip API/static/admin routes
-  if (!BOT_UA_REGEX.test(ua)) return next();
-  if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/admin')) return next();
-  if (req.path.endsWith('.xml') || req.path.endsWith('.txt') || req.path.endsWith('.json')) return next();
-
-  const baseHtml = resolveFrontendHtml();
-  if (!baseHtml) return next(); // No built frontend — skip
+  const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist', 'index.html');
+  if (!fs.existsSync(frontendDistPath)) return next();
 
   try {
+    let html = fs.readFileSync(frontendDistPath, 'utf8');
     const segments = req.path.split('/').filter(Boolean).map(s => decodeURIComponent(s));
-    let title = 'New Bharat Digital — ताजा हिंदी समाचार';
-    let description = 'ताजा खबरें, ब्रेकिंग न्यूज़ और सभी प्रमुख श्रेणियों की हिंदी समाचार अपडेट पढ़ें।';
-    const publicOrigin = getPublicOrigin(req);
-    let image = resolvePublicUrl('/news.webp', publicOrigin);
-    let type = 'website';
-    let canonical = resolvePublicUrl(req.path, publicOrigin);
-    let publishedTime = '';
-    let modifiedTime = '';
-    let articleAuthor = '';
-    let articleSection = '';
-    let articleTags = '';
 
-    // Article page: /category/slug OR /category/sub/slug
-    if (segments.length === 2 || segments.length === 3) {
+    // Simple logic: if it's a deep path, try to find an article
+    if (segments.length >= 2) {
       const slug = segments[segments.length - 1].toLowerCase();
-      const article = await News.findOne({ slug, status: 'published' })
-        .populate([{ path: 'category' }, { path: 'subCategory', select: 'name slug' }, { path: 'author', select: 'name' }])
-        .select('title hindiTitle excerpt hindiExcerpt content hindiContent seo featuredImage category subCategory author createdAt updatedAt tags');
+      const article = await News.findOne({ slug, status: 'published' }).select('title hindiTitle excerpt featuredImage');
 
       if (article) {
-        title = article.seo?.metaTitle || article.hindiTitle || article.title || title;
-        
-        // Build description: SEO Meta > Hindi Excerpt > English Excerpt > Truncated Content
-        const plainHindi = stripHtml(article.hindiContent || '');
-        const plainEng = stripHtml(article.content || '');
-        const fallbackDesc = plainHindi.length > 50 ? plainHindi : plainEng;
-        
-        description = article.seo?.metaDescription || 
-                      article.hindiExcerpt || 
-                      article.excerpt || 
-                      (fallbackDesc.length > 180 ? fallbackDesc.slice(0, 180) + '...' : fallbackDesc) || 
-                      description;
+        const title = article.hindiTitle || article.title;
+        const desc = article.excerpt || 'ताजा खबरें और ब्रेकिंग न्यूज़';
+        const image = article.featuredImage?.jpgUrl 
+          ? (article.featuredImage.jpgUrl.startsWith('http') ? article.featuredImage.jpgUrl : `${SITE_URL}${article.featuredImage.jpgUrl}`)
+          : `${SITE_URL}/news.webp`;
 
-        // Decode HTML entities to avoid &amp;nbsp; in WhatsApp description
-        const unescapeHtmlEntities = (str) => String(str).replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
-        description = unescapeHtmlEntities(description);
-
-        image = article.featuredImage?.jpgUrl
-          ? resolvePublicUrl(article.featuredImage.jpgUrl, publicOrigin)
-          : article.featuredImage?.url
-          ? toSocialImageUrl(article.featuredImage.url, publicOrigin)
-          : resolvePublicUrl('/news.webp', publicOrigin);
-        type = 'article';
-        publishedTime = article.createdAt ? new Date(article.createdAt).toISOString() : '';
-        modifiedTime = article.updatedAt ? new Date(article.updatedAt).toISOString() : '';
-        articleAuthor = article.author?.name || 'New Bharat Digital';
-        articleSection = article.category?.name || '';
-        articleTags = Array.isArray(article.tags) ? article.tags.join(',') : '';
-      }
-    }
-
-    // Category page: /category-slug
-    if (segments.length === 1) {
-      const cat = await NewsCategory.findOne({ slug: segments[0], isActive: true }).select('name seo description');
-      if (cat) {
-        title = cat.seo?.metaTitle || `${cat.name} समाचार | New Bharat Digital`;
-        description = cat.seo?.metaDescription || cat.description || `${cat.name} की ताजा खबरें पढ़ें New Bharat Digital पर।`;
-      }
-    }
-
-    const articleMeta = type === 'article' ? `
-  <meta property="article:published_time" content="${escapeHtml(publishedTime)}" />
-  <meta property="article:modified_time" content="${escapeHtml(modifiedTime)}" />
-  <meta property="article:author" content="${escapeHtml(articleAuthor)}" />
-  <meta property="article:section" content="${escapeHtml(articleSection)}" />
-  <meta property="article:tag" content="${escapeHtml(articleTags)}" />` : '';
-
-    const injectedMeta = `
-  <!-- SEO Prerender Inject -->
-  <title>${escapeHtml(title)}</title>
-  <meta name="description" content="${escapeHtml(description)}" />
-  <link rel="canonical" href="${escapeHtml(canonical)}" />
-  <meta property="og:title" content="${escapeHtml(title)}" />
-  <meta property="og:description" content="${escapeHtml(description)}" />
-  <meta property="og:image" content="${escapeHtml(image)}" />
-  <meta property="og:image:secure_url" content="${escapeHtml(image)}" />
-  <meta property="og:image:type" content="${escapeHtml(getImageMimeType(image))}" />
-  <meta property="og:image:alt" content="${escapeHtml(title)}" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:url" content="${escapeHtml(canonical)}" />
-  <meta property="og:type" content="${type}" />
-  <meta property="og:site_name" content="New Bharat Digital" />
-  <meta property="og:locale" content="hi_IN" />
+        const metaTags = `
+  <title>${title}</title>
+  <meta property="og:title" content="${title}" />
+  <meta property="og:description" content="${desc}" />
+  <meta property="og:image" content="${image}" />
+  <meta property="og:url" content="${SITE_URL}${req.path}" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${escapeHtml(title)}" />
-  <meta name="twitter:description" content="${escapeHtml(description)}" />
-  <meta name="twitter:image" content="${escapeHtml(image)}" />${articleMeta}`;
+  <meta name="twitter:title" content="${title}" />
+  <meta name="twitter:description" content="${desc}" />
+  <meta name="twitter:image" content="${image}" />`;
 
-    // Inject into <head> — strip generic duplicate SEO tags to prioritize dynamic tags
-    // Use [\s\S]*? to handle multiline tags in index.html
-    let html = baseHtml
-      .replace(/<title>[\s\S]*?<\/title>/gi, '')
-      .replace(/<meta[^>]*?name="description"[\s\S]*?>/gi, '')
-      .replace(/<meta[^>]*?property="og:[^"]+"[\s\S]*?>/gi, '')
-      .replace(/<meta[^>]*?name="twitter:[^"]+"[\s\S]*?>/gi, '')
-      .replace('</head>', `${injectedMeta}\n</head>`);
+        // Inject into head, replacing existing titles/og tags if any
+        html = html.replace(/<title>.*?<\/title>/gi, '')
+                   .replace(/<meta property="og:title".*?>/gi, '')
+                   .replace(/<meta property="og:description".*?>/gi, '')
+                   .replace(/<meta property="og:image".*?>/gi, '')
+                   .replace('</head>', `${metaTags}\n</head>`);
+      }
+    }
 
-    res.setHeader('Content-Type', 'text/html; charset=UTF-8');
-    res.setHeader('Cache-Control', 'public, max-age=300'); // 5 min for bots
     res.send(html);
   } catch (err) {
-    console.error('Prerender error:', err.message);
-    next(); // Fall through to normal serving
+    next();
   }
 });
-
-// ── Sitemap Routes (served before static files) ───────────────────────────────
-app.use('/', sitemapRoutes);
 
 // ── API Routes ────────────────────────────────────────────────────────────────
 app.get('/api', (req, res) => res.send('News API is running'));
@@ -287,55 +127,6 @@ app.use('/api/subcategories', subCategoryRoutes);
 app.use('/api/authors', authorRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/search', searchRoutes);
-
-app.get('/uploads/social/:filename', async (req, res, next) => {
-  try {
-    const requestedName = path.basename(req.params.filename || '');
-    const requestedBase = path.parse(requestedName).name;
-
-    if (!requestedBase || path.extname(requestedName).toLowerCase() !== '.jpg') {
-      return next();
-    }
-
-    if (!fs.existsSync(SOCIAL_UPLOADS_DIR)) {
-      fs.mkdirSync(SOCIAL_UPLOADS_DIR, { recursive: true });
-    }
-
-    const cachedPath = path.join(SOCIAL_UPLOADS_DIR, `${requestedBase}.jpg`);
-    if (fs.existsSync(cachedPath)) {
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-      return res.type('jpeg').sendFile(cachedPath);
-    }
-
-    const sourceFile = fs
-      .readdirSync(UPLOADS_DIR, { withFileTypes: true })
-      .filter((entry) => entry.isFile())
-      .map((entry) => entry.name)
-      .find((file) => path.parse(file).name === requestedBase);
-
-    if (!sourceFile) {
-      return next();
-    }
-
-    const sourcePath = path.join(UPLOADS_DIR, sourceFile);
-    await sharp(sourcePath)
-      .rotate()
-      .resize(1200, 630, {
-        fit: 'cover',
-        position: 'center'
-      })
-      .jpeg({
-        quality: 82,
-        progressive: true
-      })
-      .toFile(cachedPath);
-
-    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-    return res.type('jpeg').sendFile(cachedPath);
-  } catch (error) {
-    return next(error);
-  }
-});
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   maxAge: '30d', // Cache uploads for 30 days
@@ -348,7 +139,7 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin', 'index.html'));
 });
 
-// ── Frontend Static Hosting (Crucial for Bot SEO Prerendering) ───────────
+// ── Frontend Static Hosting ───────────────────────────────────────────────────
 const frontendStaticPath = path.join(__dirname, '..', 'frontend', 'dist');
 app.use(express.static(frontendStaticPath, { index: false }));
 
@@ -358,9 +149,11 @@ app.get(/.*/, (req, res, next) => {
     return next();
   }
   const indexPath = path.join(frontendStaticPath, 'index.html');
-  res.sendFile(indexPath, err => {
-    if (err) next();
-  });
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    next();
+  }
 });
 
 // ── 404 Handler ──────────────────────────────────────────

@@ -19,7 +19,7 @@ const deriveSocialJpgPath = (url = '') => {
   const raw = String(url || '').trim();
   const match = raw.match(/^(.*\/uploads\/)([^/?#/.]+)\.[^/?#]+([?#].*)?$/i);
   if (!match) return '';
-  return `${match[1]}social/${match[2]}.jpg`;
+  return `${match[1]}${match[2]}.jpg`;
 };
 
 export const getFeaturedImageUrl = (article) => (

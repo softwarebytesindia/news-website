@@ -80,7 +80,11 @@ const Navbar = () => {
         </ul>
 
         <div className={`md:flex items-center gap-3 flex-shrink-0 ${isMenuOpen ? 'hidden' : ''}`}>
-          <button className="w-10 h-10 border-none bg-gray-100 rounded-full cursor-pointer flex items-center justify-center text-gray-600 transition-all duration-200 hover:bg-gray-200 hover:text-gray-900" aria-label="Search">
+          <button 
+            className="w-10 h-10 border-none bg-gray-100 rounded-full cursor-pointer flex items-center justify-center text-gray-600 transition-all duration-200 hover:bg-gray-200 hover:text-gray-900" 
+            aria-label="Search"
+            onClick={(event) => handleNavigate(event, '/search')}
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"></circle>
               <path d="m21 21-4.35-4.35"></path>
