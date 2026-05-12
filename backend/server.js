@@ -81,6 +81,12 @@ app.use(async (req, res, next) => {
     let html = fs.readFileSync(frontendDistPath, 'utf8');
     const segments = req.path.split('/').filter(Boolean).map(s => decodeURIComponent(s));
 
+    // Detect the current host dynamically if not hardcoded in env
+    const host = req.get('x-forwarded-host') || req.get('host');
+    const protocol = req.get('x-forwarded-proto') || req.protocol;
+    const currentOrigin = `${protocol}://${host}`;
+    const publicOrigin = SITE_URL.includes('localhost') ? currentOrigin : SITE_URL;
+
     // Simple logic: if it's a deep path, try to find an article
     if (segments.length >= 2) {
       const slug = segments[segments.length - 1].toLowerCase();
@@ -89,27 +95,35 @@ app.use(async (req, res, next) => {
       if (article) {
         const title = article.hindiTitle || article.title;
         const desc = article.excerpt || 'ताजा खबरें और ब्रेकिंग न्यूज़';
-        const image = article.featuredImage?.jpgUrl 
-          ? (article.featuredImage.jpgUrl.startsWith('http') ? article.featuredImage.jpgUrl : `${SITE_URL}${article.featuredImage.jpgUrl}`)
-          : `${SITE_URL}/news.webp`;
+        
+        // Priority: jpgUrl > url > default logo
+        const rawImageUrl = article.featuredImage?.jpgUrl || article.featuredImage?.url || '/news.webp';
+        const image = rawImageUrl.startsWith('http') ? rawImageUrl : `${publicOrigin}${rawImageUrl.startsWith('/') ? '' : '/'}${rawImageUrl}`;
+        
+        const isJpg = image.toLowerCase().endsWith('.jpg') || image.toLowerCase().endsWith('.jpeg');
+        const mimeType = isJpg ? 'image/jpeg' : 'image/webp';
 
         const metaTags = `
   <title>${title}</title>
   <meta property="og:title" content="${title}" />
   <meta property="og:description" content="${desc}" />
   <meta property="og:image" content="${image}" />
-  <meta property="og:url" content="${SITE_URL}${req.path}" />
+  <meta property="og:image:secure_url" content="${image}" />
+  <meta property="og:image:type" content="${mimeType}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content="${publicOrigin}${req.path}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${title}" />
   <meta name="twitter:description" content="${desc}" />
   <meta name="twitter:image" content="${image}" />`;
 
-        // Inject into head, replacing existing titles/og tags if any
+        // Inject into top of head for best compatibility
         html = html.replace(/<title>.*?<\/title>/gi, '')
                    .replace(/<meta property="og:title".*?>/gi, '')
                    .replace(/<meta property="og:description".*?>/gi, '')
                    .replace(/<meta property="og:image".*?>/gi, '')
-                   .replace('</head>', `${metaTags}\n</head>`);
+                   .replace('<head>', `<head>\n${metaTags}`);
       }
     }
 
