@@ -2,6 +2,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:50
 
 export const NEWS_API_URL = `${API_BASE_URL}/api/news`;
 export const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories`;
+export const EPAPER_API_URL = `${API_BASE_URL}/api/epapers`;
 export const SEARCH_API_URL = `${API_BASE_URL}/api/search`;
 export const SITE_NAME = 'New Bharat Digital';
 export const SITE_URL = window.location.origin;

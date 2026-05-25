@@ -5,6 +5,7 @@ import ManageNews from './pages/manageNews';
 import ManageCategory from './pages/manageCategory';
 import ManageAuthor from './pages/manageAuthor';
 import ManageSubCategory from './pages/manageSubCategory';
+import ManageEpaper from './pages/manageEpaper';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="manage-news" element={<ManageNews />} />
           <Route path="manage-category" element={<ManageCategory />} />
           <Route path="manage-subcategory" element={<ManageSubCategory />} />
+          <Route path="manage-epaper" element={<ManageEpaper />} />
           <Route path="manage-author" element={<ManageAuthor />} />
         </Route>
       </Routes>

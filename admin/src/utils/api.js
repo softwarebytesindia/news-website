@@ -5,7 +5,9 @@ export const NEWS_API_URL = `${API_BASE_URL}/api/news`;
 export const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories`;
 export const SUBCATEGORIES_API_URL = `${API_BASE_URL}/api/subcategories`;
 export const AUTHORS_API_URL = `${API_BASE_URL}/api/authors`;
+export const EPAPER_API_URL = `${API_BASE_URL}/api/epapers`;
 export const UPLOAD_IMAGE_API_URL = `${API_BASE_URL}/api/upload/image`;
+export const UPLOAD_PDF_API_URL = `${API_BASE_URL}/api/upload/pdf`;
 
 export const resolveMediaUrl = (url) => {
   if (!url) return '';

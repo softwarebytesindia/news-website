@@ -1,10 +1,11 @@
-﻿import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const navItems = [
     { path: '/manage-news', label: 'Manage News', icon: 'N' },
     { path: '/manage-category', label: 'Manage Category', icon: 'C' },
     { path: '/manage-subcategory', label: 'Manage Subcategory', icon: 'S' },
+    { path: '/manage-epaper', label: 'Manage Epaper', icon: 'E' },
     { path: '/manage-author', label: 'Manage Author', icon: 'A' }
   ];
 

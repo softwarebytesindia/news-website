@@ -13,6 +13,7 @@ const authorRoutes = require('./routes/authorRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const sitemapRoutes = require('./routes/sitemapRoutes');
 const searchRoutes = require('./routes/searchRoutes');
+const epaperRoutes = require('./routes/epaperRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -205,6 +206,7 @@ app.use('/api/subcategories', subCategoryRoutes);
 app.use('/api/authors', authorRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/epapers', epaperRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   maxAge: '30d', // Cache uploads for 30 days
   immutable: true

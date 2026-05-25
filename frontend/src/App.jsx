@@ -9,6 +9,7 @@ import NewsDetailPage from './pages/NewsDetailPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import SearchPage from './pages/SearchPage';
+import EpaperPage from './pages/EpaperPage';
 
 const getCurrentPath = () => window.location.pathname;
 
@@ -32,8 +33,14 @@ function App() {
     return <SearchPage />;
   }
 
-  if (pathname === '/about') {
+  const cleanPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.slice(0,-1) : pathname;
+
+  if (cleanPath === '/about') {
     return <About />;
+  }
+
+  if (cleanPath === '/epaper' || cleanPath === '/e-paper') {
+    return <EpaperPage />;
   }
 
   if (pathname === '/privacy') {
