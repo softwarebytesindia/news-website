@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Breadcrumb from '../components/Breadcrumb';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
-import { applySeoMeta, NEWS_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
+import { applySeoMeta, NEWS_API_URL, formatNewsDate, getFeaturedImageJpgUrl, getFeaturedImageUrl, getNewsPath, getNewsSummary, navigateTo, useFeaturedImageFallback } from '../utils/news';
 
 const getQueryPage = () => {
   const params = new URLSearchParams(window.location.search);
@@ -81,8 +81,8 @@ const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
 
     // Use first article's image as OG image for the category page
     const firstArticle = Array.isArray(pageData.news) ? pageData.news[0] : null;
-    const imageUrl = firstArticle?.featuredImage?.url
-      ? resolveMediaUrl(firstArticle.featuredImage.url)
+    const imageUrl = firstArticle?.featuredImage?.url || firstArticle?.featuredImage?.jpgUrl
+      ? getFeaturedImageJpgUrl(firstArticle) || getFeaturedImageUrl(firstArticle)
       : `${window.location.origin}/news.webp`;
 
     return applySeoMeta({
@@ -159,10 +159,11 @@ const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
                         className="group no-underline bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 flex gap-4"
                       >
                         <div className="w-28 sm:w-40 h-24 sm:h-28 bg-gray-100 flex-shrink-0 overflow-hidden">
-                          {article.featuredImage?.url ? (
+                          {article.featuredImage?.url || article.featuredImage?.jpgUrl ? (
                             <img
-                              src={resolveMediaUrl(article.featuredImage.url)}
+                              src={getFeaturedImageUrl(article)}
                               alt={article.featuredImage.alt || article.title}
+                              onError={(event) => useFeaturedImageFallback(event, article)}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                           ) : null}
@@ -229,10 +230,11 @@ const CategoryNewsPage = ({ categorySlug, subCategorySlug = null }) => {
                         className="group no-underline flex items-start gap-3 border-b border-gray-100 pb-4 last:border-b-0 last:pb-0"
                       >
                         <div className="w-24 h-18 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                          {item.featuredImage?.url ? (
+                          {item.featuredImage?.url || item.featuredImage?.jpgUrl ? (
                             <img
-                              src={resolveMediaUrl(item.featuredImage.url)}
+                              src={getFeaturedImageUrl(item)}
                               alt={item.featuredImage.alt || item.title}
+                              onError={(event) => useFeaturedImageFallback(event, item)}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                           ) : null}

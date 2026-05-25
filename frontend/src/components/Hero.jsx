@@ -1,4 +1,4 @@
-import { formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
+import { formatNewsDate, getFeaturedImageUrl, getNewsPath, getNewsSummary, navigateTo, useFeaturedImageFallback } from '../utils/news';
 
 const Hero = ({ articles, loading, error }) => (
   <section className="bg-gray-50 py-4 sm:py-6 sm:px-6 px-3 border-b border-gray-200">
@@ -41,10 +41,11 @@ const Hero = ({ articles, loading, error }) => (
               className="block no-underline bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
             >
               <div className="relative aspect-[3/2] overflow-hidden">
-                {news.featuredImage?.url ? (
+                {news.featuredImage?.url || news.featuredImage?.jpgUrl ? (
                   <img
-                    src={resolveMediaUrl(news.featuredImage.url)}
+                    src={getFeaturedImageUrl(news)}
                     alt={news.featuredImage.alt || news.title}
+                    onError={(event) => useFeaturedImageFallback(event, news)}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     fetchpriority="high"
                     width="600"

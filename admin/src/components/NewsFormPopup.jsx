@@ -26,6 +26,7 @@ const getInitialFormData = (newsItem = null) => ({
   excerpt: newsItem?.excerpt || '',
   content: newsItem?.content || '',
   featuredImageUrl: newsItem?.featuredImage?.url || '',
+  featuredImageJpgUrl: newsItem?.featuredImage?.jpgUrl || '',
   featuredImageAlt: newsItem?.featuredImage?.alt || '',
   category: newsItem?.category?._id || newsItem?.category || '',
   subCategory: newsItem?.subCategory?._id || newsItem?.subCategory || '',
@@ -132,6 +133,7 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
     try {
       setUploading(true);
       let featuredImageUrl = formData.featuredImageUrl.trim();
+      let featuredImageJpgUrl = formData.featuredImageJpgUrl.trim();
 
       if (imageFile) {
         const fd = new FormData();
@@ -139,14 +141,15 @@ const NewsFormPopup = ({ isOpen, onClose, onSuccess, newsItem }) => {
         const res = await fetch(UPLOAD_IMAGE_API_URL, { method: 'POST', body: fd });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Image upload failed');
-        featuredImageUrl = data.filePath || featuredImageUrl;
+        featuredImageUrl = data.avifPath || data.filePath || featuredImageUrl;
+        featuredImageJpgUrl = data.jpgPath || featuredImageJpgUrl;
       }
 
       const payload = {
         title: formData.hindiTitle.trim(),
         slug: formData.slug.trim(),
         content: formData.hindiContent.trim(),
-        featuredImage: { url: featuredImageUrl, alt: formData.featuredImageAlt.trim() },
+        featuredImage: { url: featuredImageUrl, jpgUrl: featuredImageJpgUrl, alt: formData.featuredImageAlt.trim() },
         category: formData.category,
         subCategory: formData.subCategory || null,
         author: formData.author || null,

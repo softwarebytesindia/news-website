@@ -1,17 +1,50 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export const PUBLIC_SITE_URL = (import.meta.env.VITE_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://newsdigitalbharat.com')).replace(/\/+$/, '');
+export const MEDIA_BASE_URL = (import.meta.env.VITE_MEDIA_BASE_URL || API_BASE_URL).replace(/\/+$/, '');
 
 export const NEWS_API_URL = `${API_BASE_URL}/api/news`;
 export const CATEGORIES_API_URL = `${API_BASE_URL}/api/categories`;
 export const EPAPER_API_URL = `${API_BASE_URL}/api/epapers`;
 export const SEARCH_API_URL = `${API_BASE_URL}/api/search`;
 export const SITE_NAME = 'New Bharat Digital';
-export const SITE_URL = window.location.origin;
+export const SITE_URL = PUBLIC_SITE_URL;
 export const TWITTER_HANDLE = '@NewBharatDigital'; // Update to your actual handle
 
 export const resolveMediaUrl = (url) => {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
-  return url.startsWith('/') ? `${API_BASE_URL}${url}` : `${API_BASE_URL}/${url}`;
+  return url.startsWith('/') ? `${MEDIA_BASE_URL}${url}` : `${MEDIA_BASE_URL}/${url}`;
+};
+
+const deriveSocialJpgPath = (url = '') => {
+  const raw = String(url || '').trim();
+  const match = raw.match(/^(.*\/uploads\/)([^/?#/.]+)\.[^/?#]+([?#].*)?$/i);
+  if (!match) return '';
+  return `${match[1]}${match[2]}.jpg`;
+};
+
+export const getFeaturedImageUrl = (article) => (
+  article?.featuredImage?.url
+    ? resolveMediaUrl(article.featuredImage.url)
+    : resolveMediaUrl(article?.featuredImage?.jpgUrl || '')
+);
+
+export const getFeaturedImageJpgUrl = (article) => {
+  if (article?.featuredImage?.jpgUrl) {
+    return resolveMediaUrl(article.featuredImage.jpgUrl);
+  }
+
+  const derivedPath = deriveSocialJpgPath(article?.featuredImage?.url || '');
+  return derivedPath ? resolveMediaUrl(derivedPath) : '';
+};
+
+export const useFeaturedImageFallback = (event, article) => {
+  const fallbackUrl = getFeaturedImageJpgUrl(article);
+  if (!fallbackUrl || event.currentTarget.src === fallbackUrl) {
+    return;
+  }
+
+  event.currentTarget.src = fallbackUrl;
 };
 
 export const formatNewsDate = (value) => {

@@ -4,7 +4,7 @@ const News = require('../model/news');
 const NewsCategory = require('../model/newsCategory');
 const SubCategory = require('../model/subCategory');
 
-const SITE_URL = process.env.SITE_URL || 'https://newbharatdigital.com';
+const SITE_URL = (process.env.PUBLIC_SITE_URL || process.env.SITE_URL || 'https://newsdigitalbharat.com').replace(/\/+$/, '');
 const SITE_NAME = 'New Bharat Digital';
 const SITE_LANGUAGE = 'hi';
 
@@ -21,6 +21,11 @@ const escapeXml = (str = '') =>
 const toIsoDate = (date) => {
   if (!date) return new Date().toISOString();
   return new Date(date).toISOString();
+};
+
+const toAbsoluteUrl = (url = '') => {
+  if (!url) return '';
+  return /^https?:\/\//i.test(url) ? url : `${SITE_URL}${url.startsWith('/') ? url : `/${url}`}`;
 };
 
 /**
@@ -126,10 +131,7 @@ router.get('/sitemap-articles.xml', async (req, res) => {
         : `/${categorySlug}/${article.slug}`;
 
       // Resolve featured image URL
-      const rawImageUrl = article.featuredImage?.url || '';
-      const imageUrl = rawImageUrl
-        ? (rawImageUrl.startsWith('http') ? rawImageUrl : `${SITE_URL}${rawImageUrl}`)
-        : '';
+      const imageUrl = toAbsoluteUrl(article.featuredImage?.jpgUrl || article.featuredImage?.url || '');
 
       const imageTag = imageUrl
         ? `\n    <image:image>
@@ -241,10 +243,10 @@ router.get('/rss.xml', async (req, res) => {
 
       // Enclosure for RSS media readers (e.g. Flipboard)
       let enclosure = '';
-      if (article.featuredImage?.url) {
-        const rawUrl = article.featuredImage.url;
-        const absUrl = rawUrl.startsWith('http') ? rawUrl : `${SITE_URL}${rawUrl}`;
-        enclosure = `\n      <enclosure url="${escapeXml(absUrl)}" type="image/webp" />`;
+      const enclosureUrl = toAbsoluteUrl(article.featuredImage?.jpgUrl || article.featuredImage?.url || '');
+      if (enclosureUrl) {
+        const enclosureType = /\.jpe?g($|[?#])/i.test(enclosureUrl) ? 'image/jpeg' : 'image/webp';
+        enclosure = `\n      <enclosure url="${escapeXml(enclosureUrl)}" type="${enclosureType}" />`;
       }
 
       return `    <item>

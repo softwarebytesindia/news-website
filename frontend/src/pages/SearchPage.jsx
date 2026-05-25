@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { applySeoMeta, SEARCH_API_URL, formatNewsDate, getNewsPath, getNewsSummary, navigateTo, resolveMediaUrl } from '../utils/news';
+import { applySeoMeta, SEARCH_API_URL, formatNewsDate, getFeaturedImageUrl, getNewsPath, getNewsSummary, navigateTo, useFeaturedImageFallback } from '../utils/news';
 
 const getQueryFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
@@ -191,10 +191,11 @@ const SearchPage = () => {
                   className="group no-underline bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200 flex gap-4"
                 >
                   <div className="w-28 sm:w-40 h-24 sm:h-28 bg-gray-100 flex-shrink-0 overflow-hidden rounded-l-xl">
-                    {article.featuredImage?.url ? (
+                    {article.featuredImage?.url || article.featuredImage?.jpgUrl ? (
                       <img
-                        src={resolveMediaUrl(article.featuredImage.url)}
+                        src={getFeaturedImageUrl(article)}
                         alt={article.featuredImage.alt || article.title}
+                        onError={(event) => useFeaturedImageFallback(event, article)}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                         width="160"
